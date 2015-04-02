@@ -1,0 +1,9 @@
+*.pyc
+*~
+.project
+.pydevproject
+.settings/
+/build
+/dist
+/django_mpowering.egg-info
+/src
