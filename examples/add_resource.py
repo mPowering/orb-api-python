@@ -35,12 +35,15 @@ def run():
         print row[0]
     '''
     
+    
     resource = mpower_resource()
-    resource.title = "Alex Test931"
+    resource.title = "Alex Test9311"
     resource.description = "something else to test with"
     
     id = api.add_resource(resource)
-    api.add_resource_image(id,'/home/alex/temp/image.jpg')
+    if id:
+        api.add_resource_image(id,'/home/alex/temp/image.jpg')
+    
     
     
 if __name__ == "__main__":

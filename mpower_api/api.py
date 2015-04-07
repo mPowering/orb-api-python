@@ -49,12 +49,11 @@ class mpower_api():
             # already exists or other error
             pass
         elif connection.code == 201:
-            # already exists or other error
+            # success
             resp = connection.read()
             data_json = json.loads(resp)
             return data_json['id']
             
-    
         return
     
     def add_resource_image(self, resource_id, image_file):
@@ -65,8 +64,9 @@ class mpower_api():
         request = urllib2.Request(self.base_url + '/api/upload/image/', datagen, headers )
         request.add_header('Authorization', 'ApiKey '+self.user_name + ":" + self.api_key)
         
-        resp = urllib2.urlopen(request).read()
-        print resp
+        resp = urllib2.urlopen(request)
+        print resp.code
+        print resp.read()
         
         return
     
