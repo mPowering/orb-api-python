@@ -48,12 +48,18 @@ class mpower_api():
         elif connection.code == 400:
             # already exists or other error
             pass
+        elif connection.code == 500:
+            # already exists or other error
+            print connection.read()
         elif connection.code == 201:
             # success
             resp = connection.read()
             data_json = json.loads(resp)
             return data_json['id']
             
+        return
+    
+    def get_resource(self, resource):
         return
     
     def add_resource_image(self, resource_id, image_file):
@@ -70,8 +76,42 @@ class mpower_api():
         
         return
     
- 
+    def add_resource_file(self,resource_id, resource_file):
+        register_openers()
+        
+        datagen, headers = multipart_encode({'resource_id': resource_id,
+                                             'title': resource_file.title,
+                                             'description': resource_file.description, 
+                                             'resource_file': open(resource_file.file)})
+        handler = urllib2.HTTPHandler()
+        request = urllib2.Request(self.base_url + '/api/upload/file/', datagen, headers )
+        request.add_header('Authorization', 'ApiKey '+self.user_name + ":" + self.api_key)
+        
+        resp = urllib2.urlopen(request)
+        
+        if resp.code == 401:
+            # unauthorised
+            print resp.code
+            print resp.read()
+        elif resp.code == 400:
+            # already exists or other error
+            print resp.code
+            print resp.read()
+        elif resp.code == 500:
+            # already exists or other error
+            print resp.code
+            print resp.read()
+        elif resp.code == 201:
+            print "Uploaded"
+        
+        return
+    
+    def add_resource_tag(self,resource_id, tag_name):
+        
+        return
+    
 class mpower_resource():
+    id = None
     title = ''
     description = ''
     
