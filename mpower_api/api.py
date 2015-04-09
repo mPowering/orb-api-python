@@ -107,6 +107,13 @@ class mpower_api():
         return
     
     def add_resource_tag(self,resource_id, tag_name):
+        # find the tag id 
+        req = urllib2.Request(self.base_url + '/api/v1/tag/?name='+tag_name)
+        req.add_header('Authorization', 'ApiKey '+self.user_name + ":" + self.api_key)
+        resp = urllib2.urlopen(req)
+        data = resp.read()
+        print json.loads(data)
+        
         
         return
     
