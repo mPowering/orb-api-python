@@ -99,6 +99,7 @@ class orb_api():
         datagen, headers = multipart_encode({'resource_id': resource_id,
                                              'title': resource_file.title,
                                              'description': resource_file.description, 
+                                             'order_by': resource_file.order_by, 
                                              'resource_file': open(resource_file.file)})
         handler = urllib2.HTTPHandler()
         request = urllib2.Request(self.base_url + '/api/upload/file/', datagen, headers )
@@ -117,6 +118,56 @@ class orb_api():
         elif resp.code == HTML_CREATED:
             print "Uploaded: " + resource_file.title
         
+        return
+    
+    def add_resource_url(self,resource_id, resource_url):
+        data = json.dumps({'title': resource_url.title, 
+                           'description': resource_url.description,
+                           'url': resource_url.url,
+                           'order_by': resource_url.order_by,
+                            'resource_id': resource_id,})
+        
+        # make a string with the request type in it:
+        method = "POST"
+        # create a handler. you can specify different handlers here (file uploads etc)
+        # but we go for the default
+        handler = urllib2.HTTPHandler()
+        # create an openerdirector instance
+        opener = urllib2.build_opener(handler)
+        # build a request
+        request = urllib2.Request(self.base_url + API_PATH + 'resourceurl/', data=data )
+        # add any other information you want
+        request.add_header("Content-Type",'application/json')
+        request.add_header('Authorization', 'ApiKey '+self.user_name + ":" + self.api_key)
+        # overload the get method function with a small anonymous function...
+        request.get_method = lambda: method
+        # try it; don't forget to catch the result
+        try:
+            connection = opener.open(request)
+        except urllib2.HTTPError,e:
+            connection = e
+           
+        resp = connection.read()
+         
+        print "Adding: " + resource_url.title
+        if connection.code == HTML_UNAUTHORIZED:
+            raise ORBAPIException("Unauthorized", HTML_UNAUTHORIZED)
+        elif connection.code == HTML_BADREQUEST:
+            json_resp = json.loads(resp)
+            error = json.loads(json_resp["error"])
+            if error["code"] == ERROR_CODE_RESOURCE_EXISTS:
+                print error["message"]
+                print "Updating..."
+            else:
+                raise ORBAPIException(error["message"],error["code"])
+        elif connection.code == HTML_SERVERERROR:
+            raise ORBAPIException("Connection or Server Error", HTML_SERVERERROR)
+        elif connection.code == HTML_CREATED:
+            # success
+            data_json = json.loads(resp)
+            print "added: " + str(data_json['id']) + " : " + resource_url.title
+            return data_json['id']
+            
         return
     
     def add_resource_tag(self,resource_id, tag_name):
@@ -231,11 +282,13 @@ class orb_resource_file():
     file = ''
     title = ''
     description = ''
+    order_by = 0
     
 class orb_resource_url():
     url = ''
     title = ''
     description = ''
+    order_by = 0
     
         
 class ORBAPIException(Exception):
