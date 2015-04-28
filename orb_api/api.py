@@ -7,7 +7,7 @@ from poster.encode import multipart_encode
 from poster.streaminghttp import register_openers
 
 
-class mpower_api():
+class orb_api():
     base_url = ''
     user_name = ''
     api_key = ''
@@ -224,17 +224,17 @@ class mpower_api():
            
         return
     
-class mpower_resource():
+class orb_resource():
     id = None
     title = ''
     description = ''
     
-class mpower_resource_file():
+class orb_resource_file():
     file = ''
     title = ''
     description = ''
     
-class mpower_resource_url():
+class orb_resource_url():
     url = ''
     title = ''
     description = ''
