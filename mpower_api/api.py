@@ -72,8 +72,20 @@ class mpower_api():
         request.add_header('Authorization', 'ApiKey '+self.user_name + ":" + self.api_key)
         
         resp = urllib2.urlopen(request)
-        print resp.code
-        print resp.read()
+        if resp.code == 401:
+            # unauthorised
+            print resp.code
+            print resp.read()
+        elif resp.code == 400:
+            # already exists or other error
+            print resp.code
+            print resp.read()
+        elif resp.code == 500:
+            # already exists or other error
+            print resp.code
+            print resp.read()
+        elif resp.code == 201:
+            print "Uploaded Image: " + image_file
         
         return
     
@@ -103,7 +115,7 @@ class mpower_api():
             print resp.code
             print resp.read()
         elif resp.code == 201:
-            print "Uploaded"
+            print "Uploaded: " + resource_file.title
         
         return
     
@@ -125,6 +137,9 @@ class mpower_api():
                 tag = data_json['objects'][0]
             else:
                 tag = self.__create_tag(tag_name)
+                
+            # add tagresource
+            self.__create_resourcetag(resource_id,tag['id'])
         else: 
             print connection.code
         
@@ -170,7 +185,43 @@ class mpower_api():
            
         return
     
-    def __create_resourcetag(self):
+    def __create_resourcetag(self, resource_id, tag_id):
+        
+        data  = json.dumps({'resource_id': resource_id, 'tag_id': tag_id })       
+        method = "POST"
+        # create a handler. you can specify different handlers here (file uploads etc)
+        # but we go for the default
+        handler = urllib2.HTTPHandler()
+        # create an openerdirector instance
+        opener = urllib2.build_opener(handler)
+        # build a request
+        request = urllib2.Request(self.base_url + '/api/v1/resourcetag/', data=data )
+        # add any other information you want
+        request.add_header("Content-Type",'application/json')
+        request.add_header('Authorization', 'ApiKey '+self.user_name + ":" + self.api_key)
+        
+        request.get_method = lambda: method
+        # try it; don't forget to catch the result
+        try:
+            connection = opener.open(request)
+        except urllib2.HTTPError,e:
+            connection = e
+         
+        if connection.code == 401:
+            # unauthorised
+            pass
+        elif connection.code == 400:
+            # already exists or other error
+            pass
+        elif connection.code == 500:
+            # already exists or other error
+            print connection.read()
+        elif connection.code == 201:
+            # success
+            resp = connection.read()
+            data_json = json.loads(resp)
+            return data_json
+           
         return
     
 class mpower_resource():
