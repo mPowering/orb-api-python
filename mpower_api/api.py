@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import json
 import urllib2
+import urllib
 
 from poster.encode import multipart_encode
 from poster.streaminghttp import register_openers
@@ -108,13 +109,68 @@ class mpower_api():
     
     def add_resource_tag(self,resource_id, tag_name):
         # find the tag id 
-        req = urllib2.Request(self.base_url + '/api/v1/tag/?name='+tag_name)
+        tag_name_obj = { "name": tag_name }
+        
+        req = urllib2.Request(self.base_url + '/api/v1/tag/?' + urllib.urlencode(tag_name_obj))
         req.add_header('Authorization', 'ApiKey '+self.user_name + ":" + self.api_key)
-        resp = urllib2.urlopen(req)
-        data = resp.read()
-        print json.loads(data)
+        req.add_header('Accept', 'application/json')
+
+        connection = urllib2.urlopen(req)
+
+        resp = connection.read()
         
+        if connection.code == 200:
+            data_json = json.loads(resp)
+            if data_json['meta']['total_count'] == 1:
+                tag = data_json['objects'][0]
+            else:
+                tag = self.__create_tag(tag_name)
+        else: 
+            print connection.code
         
+        return
+    
+    def __create_tag(self,tag_name):
+        
+        data = json.dumps({'name': tag_name })
+        
+        method = "POST"
+        # create a handler. you can specify different handlers here (file uploads etc)
+        # but we go for the default
+        handler = urllib2.HTTPHandler()
+        # create an openerdirector instance
+        opener = urllib2.build_opener(handler)
+        # build a request
+        request = urllib2.Request(self.base_url + '/api/v1/tag/', data=data )
+        # add any other information you want
+        request.add_header("Content-Type",'application/json')
+        request.add_header('Authorization', 'ApiKey '+self.user_name + ":" + self.api_key)
+        
+        request.get_method = lambda: method
+        # try it; don't forget to catch the result
+        try:
+            connection = opener.open(request)
+        except urllib2.HTTPError,e:
+            connection = e
+         
+        if connection.code == 401:
+            # unauthorised
+            pass
+        elif connection.code == 400:
+            # already exists or other error
+            pass
+        elif connection.code == 500:
+            # already exists or other error
+            print connection.read()
+        elif connection.code == 201:
+            # success
+            resp = connection.read()
+            data_json = json.loads(resp)
+            return data_json
+           
+        return
+    
+    def __create_resourcetag(self):
         return
     
 class mpower_resource():
