@@ -2,12 +2,15 @@
 import json
 import urllib2
 import urllib
+import time
+
 
 from error_codes import * 
 from poster.encode import multipart_encode
 from poster.streaminghttp import register_openers
 
 API_PATH = '/api/v1/'
+DEFAULT_SLEEP = 0
 
 class orb_api():
     base_url = ''
@@ -23,6 +26,9 @@ class orb_api():
         return dataJSON
     
     def add_resource(self,resource):
+        # add in script pause to save overloading server and API limits
+        time.sleep(DEFAULT_SLEEP)
+        
         data = json.dumps({'title': resource.title, 'description': resource.description })
         
         # make a string with the request type in it:
@@ -72,6 +78,9 @@ class orb_api():
         return
     
     def add_resource_image(self, resource_id, image_file):
+        # add in script pause to save overloading server and API limits
+        time.sleep(DEFAULT_SLEEP)
+        
         register_openers()
         
         datagen, headers = multipart_encode({'resource_id': resource_id, 'image_file': open(image_file)})
@@ -94,6 +103,9 @@ class orb_api():
         return
     
     def add_resource_file(self,resource_id, resource_file):
+        # add in script pause to save overloading server and API limits
+        time.sleep(DEFAULT_SLEEP)
+        
         register_openers()
         
         datagen, headers = multipart_encode({'resource_id': resource_id,
@@ -121,6 +133,9 @@ class orb_api():
         return
     
     def add_resource_url(self,resource_id, resource_url):
+        # add in script pause to save overloading server and API limits
+        time.sleep(DEFAULT_SLEEP)
+        
         data = json.dumps({'title': resource_url.title, 
                            'description': resource_url.description,
                            'url': resource_url.url,
@@ -171,6 +186,11 @@ class orb_api():
         return
     
     def add_resource_tag(self,resource_id, tag_name):
+        # add in script pause to save overloading server and API limits
+        time.sleep(DEFAULT_SLEEP)
+        
+        print "adding tag: " + tag_name.strip()
+        
         # find the tag id 
         tag_name_obj = { "name": tag_name }
         
@@ -190,10 +210,12 @@ class orb_api():
                 tag = self.__create_tag(tag_name)
                 
             # add tagresource
-            self.__create_resourcetag(resource_id,tag['id'])
+            if tag is not None:
+                self.__create_resourcetag(resource_id,tag['id'])
         else: 
             print connection.code
         
+        print "added tag: " + tag_name.strip()
         return
     
     def __create_tag(self,tag_name):
@@ -218,18 +240,21 @@ class orb_api():
             connection = opener.open(request)
         except urllib2.HTTPError,e:
             connection = e
-         
+        
+        resp = connection.read()
         if connection.code == HTML_UNAUTHORIZED:
             raise ORBAPIException("Unauthorized", HTML_UNAUTHORIZED)
         elif connection.code == HTML_BADREQUEST:
-            json_resp = json.loads(resp.read())
+            json_resp = json.loads(resp)
             error = json.loads(json_resp["error"])
+            if error["code"] == ERROR_CODE_TAG_EMPTY:
+                return
             raise ORBAPIException(error["message"],error["code"])
         elif connection.code == HTML_SERVERERROR:
+            print resp
             raise ORBAPIException("Connection or Server Error", HTML_SERVERERROR)
         elif connection.code == HTML_CREATED:
             # success
-            resp = connection.read()
             data_json = json.loads(resp)
             return data_json
            
