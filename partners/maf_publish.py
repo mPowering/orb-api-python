@@ -3,6 +3,7 @@ import argparse
 import csv
 import json
 import os, sys
+import urllib
 import urllib2
 
 
@@ -59,7 +60,7 @@ def run(orb_username, orb_key):
             resource.title =  row[CSV_FORMAT['title']]
             
             # get the video info from Vimeo
-            req = urllib2.Request("https://vimeo.com/api/oembed.json?url=" + row[CSV_FORMAT['preview']], 
+            req = urllib2.Request("https://vimeo.com/api/oembed.json?maxwidth=500&url=" + row[CSV_FORMAT['preview']], 
                                   headers={ 'User-Agent': 'Mozilla/5.0',
                                            })
             response = urllib2.urlopen(req)
@@ -76,6 +77,12 @@ def run(orb_username, orb_key):
             if resource.id:
                 
                 # get resource image from vimeo
+                image_file_path = os.path.join('/tmp', str(vimeo_data['video_id']) + '.jpg')
+                urllib.urlretrieve (vimeo_data['thumbnail_url'], image_file_path )
+                
+                api.add_resource_image(resource.id, image_file_path)
+                
+                
                 
                 # add all the default tags
                 for tag in MPOWERING_DEFAULT_TAGS:
@@ -151,7 +158,7 @@ def run(orb_username, orb_key):
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("orb_username", help="ORB user Name")
+    parser.add_argument("orb_username", help="ORB User Name")
     parser.add_argument("orb_key", help="ORB API Key")
     args = parser.parse_args()
     run(args.orb_username, args.orb_key)
