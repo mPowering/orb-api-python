@@ -1,9 +1,9 @@
 #!/usr/bin/python
 import json
+import re
 import urllib2
 import urllib
 import time
-
 
 from error_codes import * 
 from poster.encode import multipart_encode
@@ -140,7 +140,8 @@ class orb_api():
                            'description': resource_url.description,
                            'url': resource_url.url,
                            'order_by': resource_url.order_by,
-                            'resource_id': resource_id,})
+                           'file_size': resource_url.file_size,
+                           'resource_id': resource_id,})
         
         # make a string with the request type in it:
         method = "POST"
@@ -190,6 +191,10 @@ class orb_api():
         time.sleep(DEFAULT_SLEEP)
         
         print "adding tag: " + tag_name.strip()
+        
+        regex = re.compile('[,\.!?"\']')
+        if regex.sub('', tag_name.strip()) == '':
+            return
         
         # find the tag id 
         tag_name_obj = { "name": tag_name }
@@ -314,6 +319,7 @@ class orb_resource_url():
     title = ''
     description = ''
     order_by = 0
+    file_size = 0
     
         
 class ORBAPIException(Exception):
