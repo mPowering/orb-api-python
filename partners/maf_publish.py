@@ -39,9 +39,9 @@ MPOWERING_DEFAULT_TAGS = ["Medical Aid Films",
                           "Tablet", 
                           "Creative Commons 3.0 (CC-BY-NC-ND)"]
 
-def run(orb_username, orb_key): 
+def run(orb_url, orb_username, orb_key): 
     api = orb_api()
-    api.base_url = 'http://localhost:8000'
+    api.base_url = orb_url
     api.user_name = orb_username
     api.api_key = orb_key    
     
@@ -82,8 +82,6 @@ def run(orb_username, orb_key):
                 
                 api.add_resource_image(resource.id, image_file_path)
                 
-                
-                
                 # add all the default tags
                 for tag in MPOWERING_DEFAULT_TAGS:
                     api.add_resource_tag(resource.id, tag.strip())
@@ -101,64 +99,15 @@ def run(orb_username, orb_key):
                     resource_url = orb_resource_url()
                     resource_url.title = "View/Download on Vimeo"
                     resource_url.url = row[CSV_FORMAT['preview']]
-                    # attempt to get file size
-                    '''
-                    try:
-                        response = urllib2.urlopen(row[CSV_FORMAT['preview']])
-                        resource_url.file_size = response.headers['Content-Length']
-                    except:
-                        resource_url.file_size = 0
-                    '''
-                        
+                
                     api.add_resource_url(resource.id,resource_url)
                     
-                '''
-                if row[CSV_FORMAT['download_hq']].strip() != "":
-                    print "adding url: " + row[CSV_FORMAT['download_hq']]
-                    resource_url = orb_resource_url()
-                    resource_url.title = "High Definition - for Projection"
-                    resource_url.url = row[CSV_FORMAT['download_hq']]
-                    # attempt to get file size
-                    try:
-                        response = urllib2.urlopen(row[CSV_FORMAT['download_hq']])
-                        resource_url.file_size = response.headers['Content-Length']
-                    except:
-                        resource_url.file_size = 0
-                        
-                    api.add_resource_url(resource.id,resource_url)
-                
-                if row[CSV_FORMAT['download_mq']].strip() != "":
-                    print "adding url: " + row[CSV_FORMAT['download_mq']]
-                    resource_url = orb_resource_url()
-                    resource_url.title = "Medium Resolution - for Laptop/Desktop"
-                    resource_url.url = row[CSV_FORMAT['download_mq']]
-                    # attempt to get file size
-                    try:
-                        response = urllib2.urlopen(row[CSV_FORMAT['download_mq']])
-                        resource_url.file_size = response.headers['Content-Length']
-                    except:
-                        resource_url.file_size = 0
-                        
-                    api.add_resource_url(resource.id,resource_url)
-                
-                if row[CSV_FORMAT['download_lq']].strip() != "":
-                    print "adding url: " + row[CSV_FORMAT['download_lq']]
-                    resource_url = orb_resource_url()
-                    resource_url.title = "Low Resolution - for Mobile Devices"
-                    resource_url.url = row[CSV_FORMAT['download_lq']]
-                    # attempt to get file size
-                    try:
-                        response = urllib2.urlopen(row[CSV_FORMAT['download_lq']])
-                        resource_url.file_size = response.headers['Content-Length']
-                    except:
-                        resource_url.file_size = 0
-                        
-                    api.add_resource_url(resource.id,resource_url)
-                '''
+    
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("orb_url", help="ORB url")
     parser.add_argument("orb_username", help="ORB User Name")
     parser.add_argument("orb_key", help="ORB API Key")
     args = parser.parse_args()
-    run(args.orb_username, args.orb_key)
+    run(args.orb_url, args.orb_username, args.orb_key)
