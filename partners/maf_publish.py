@@ -25,10 +25,11 @@ CSV_FORMAT = {
               'audience': 3,
               'language': 4,
               'geography': 5,
-              'preview': 6,
-              'download_hq': 7,
-              'download_mq': 8,
-              'download_lq': 9
+              'study_time': 6,
+              'preview': 7,
+              'download_hq': 8,
+              'download_mq': 9,
+              'download_lq': 10
               
               }
 
@@ -72,6 +73,10 @@ def run(orb_url, orb_username, orb_key):
             
             resource.description = row[CSV_FORMAT['description']].decode('utf-8') + '<div style="text-align:center;">' + vimeo_data['html'].decode('utf-8') + '</div>'
             
+            if row[CSV_FORMAT['study_time']] != '':
+                resource.study_time_number = row[CSV_FORMAT['study_time']]
+                resource.study_time_unit = 'mins'
+                
             resource.id = api.add_resource(resource)
             
             if resource.id:

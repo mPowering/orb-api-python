@@ -29,7 +29,10 @@ class orb_api():
         # add in script pause to save overloading server and API limits
         time.sleep(DEFAULT_SLEEP)
         
-        data = json.dumps({'title': resource.title, 'description': resource.description })
+        data = json.dumps({'title': resource.title, 
+                           'description': resource.description,
+                           'study_time_number': resource.study_time_number,
+                           'study_time_unit': resource.study_time_unit })
         
         # make a string with the request type in it:
         method = "POST"
@@ -305,8 +308,10 @@ class orb_api():
     
 class orb_resource():
     id = None
-    title = ''
-    description = ''
+    title = None
+    description = None
+    study_time_number = 0
+    study_time_unit = None
     
 class orb_resource_file():
     file = ''
