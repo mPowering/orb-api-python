@@ -75,12 +75,14 @@ def run(orb_url, orb_username, orb_key, db_name, db_user, db_passwd):
     '''
     cur.execute("""SELECT id, title, description, icon, tags, location_code, study_hours FROM dc_course WHERE mpowering = 1""")
     
+    additional_desc = "<p>This course is part of the Ethiopia Federal Ministry of Health approved upgrade training program for Health Extension Workers.</p>"
+    
     # print all the first cell of all the rows
     for row in cur.fetchall() :
     
         resource = orb_resource()
         resource.title =  row['title'].decode('utf-8')
-        resource.description = row['description'].decode('utf-8')
+        resource.description = row['description'].decode('utf-8') + additional_desc
         if row['study_hours'] != None:
             resource.study_time_number = row['study_hours']
             resource.study_time_unit = 'hours' 
