@@ -29,7 +29,14 @@ CSV_FORMAT = {
               'preview': 7,
               'download_hq': 8,
               'download_mq': 9,
-              'download_lq': 10
+              'download_lq': 10,
+              'French':11,
+              'Swahili':12,
+              'Somali':13,
+              'Amharic':14,
+              'Portugese':15,
+              'Dari':16
+              
               
               }
 
@@ -102,12 +109,22 @@ def run(orb_url, orb_username, orb_key):
                 if row[CSV_FORMAT['preview']].strip() != "":
                     print "adding url: " + row[CSV_FORMAT['preview']]
                     resource_url = orb_resource_url()
-                    resource_url.title = "View/Download on Vimeo"
+                    resource_url.title = "View/Download on Vimeo (English)"
                     resource_url.url = row[CSV_FORMAT['preview']]
                 
                     api.add_resource_url(resource.id,resource_url)
                     
-    
+                other_langs_list = ['French', 'Swahili', 'Somali', 'Amharic', 'Portugese', 'Dari']
+                for ol in other_langs_list:
+                    if row[CSV_FORMAT[ol]].strip() != "":
+                        print "adding url: " + row[CSV_FORMAT[ol]]
+                        resource_url = orb_resource_url()
+                        resource_url.title = "View/Download on Vimeo ("+ ol +")"
+                        resource_url.url = row[CSV_FORMAT[ol]]
+                    
+                        api.add_resource_url(resource.id, resource_url)
+                        api.add_resource_tag(resource.id, ol.strip())
+                        
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
