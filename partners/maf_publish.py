@@ -109,7 +109,7 @@ def run(orb_url, orb_username, orb_key):
                 if row[CSV_FORMAT['preview']].strip() != "":
                     print "adding url: " + row[CSV_FORMAT['preview']]
                     resource_url = orb_resource_url()
-                    resource_url.title = "View/Download on Vimeo (English)"
+                    resource_url.title = "View/Download on Vimeo (" + row[CSV_FORMAT['language']] + ")"
                     resource_url.url = row[CSV_FORMAT['preview']]
                 
                     api.add_resource_url(resource.id,resource_url)
