@@ -13,7 +13,7 @@ PROJECT_PATH = os.path.normpath(os.path.join(BASE_DIR, '..', 'orb_api'))
 if PROJECT_PATH not in sys.path:
     sys.path.append(PROJECT_PATH)
     
-from api import orb_api, orb_resource, orb_resource_file, orb_resource_url
+from api import orb_api, orb_resource, orb_resource_file, orb_resource_url, ORBAPIResourceExistsException
 from error_codes import * 
    
 INFILE = os.path.join(BASE_DIR, 'maf_data', 'MAF-ORB-data.csv')
@@ -47,11 +47,14 @@ MPOWERING_DEFAULT_TAGS = ["Medical Aid Films",
                           "Tablet", 
                           "Creative Commons 3.0 (CC-BY-NC-ND)"]
 
+DEBUG = True
+
 def run(orb_url, orb_username, orb_key): 
     api = orb_api()
     api.base_url = orb_url
     api.user_name = orb_username
-    api.api_key = orb_key    
+    api.api_key = orb_key  
+    api.verbose_output = DEBUG  
     
     with open(INFILE, 'rb') as csvfile:
         file_reader = csv.reader(csvfile, delimiter=',', quotechar='"')
@@ -60,7 +63,7 @@ def run(orb_url, orb_username, orb_key):
             if counter == 0:
                 continue
             
-            # skip it no title
+            # skip if no title
             if row[CSV_FORMAT['title']].strip() == "":
                 continue
             
@@ -84,46 +87,66 @@ def run(orb_url, orb_username, orb_key):
                 resource.study_time_number = row[CSV_FORMAT['study_time']]
                 resource.study_time_unit = 'mins'
                 
-            resource.id = api.add_resource(resource)
+            try:
+                resource.id = api.add_resource(resource)
+                # update the resource
+                #####
+            except ORBAPIResourceExistsException, e:
+                if DEBUG:
+                    print e.message + ", id no:" + str(e.pk)
+                resource.id = e.pk  
+     
+ 
+            # get the resource id
+            resource_from_api = api.get_resource(resource)
             
-            if resource.id:
+            # remove all ResourceFiles
+            api.delete_resource_files(resource_from_api['files'])
                 
-                # get resource image from vimeo
-                image_file_path = os.path.join('/tmp', str(vimeo_data['video_id']) + '.jpg')
-                urllib.urlretrieve (vimeo_data['thumbnail_url'], image_file_path )
+            # remove all ResourceURLs
+            api.delete_resource_urls(resource_from_api['urls'])
+            
+            # remove all tags for resource
+            api.delete_resource_tags(resource_from_api['tags'])
                 
-                api.add_resource_image(resource.id, image_file_path)
+            # get resource image from vimeo
+            image_file_path = os.path.join('/tmp', str(vimeo_data['video_id']) + '.jpg')
+            urllib.urlretrieve (vimeo_data['thumbnail_url'], image_file_path )
+            
+            api.add_or_update_resource_image(resource.id, image_file_path)
+            
+            # add all the default tags
+            for tag in MPOWERING_DEFAULT_TAGS:
+                api.add_resource_tag(resource.id, tag.strip())
                 
-                # add all the default tags
-                for tag in MPOWERING_DEFAULT_TAGS:
-                    api.add_resource_tag(resource.id, tag.strip())
-                    
-                # add resource specific tags
-                specific_tags = row[CSV_FORMAT['health-domain']] + "," + row[CSV_FORMAT['audience']] + "," + row[CSV_FORMAT['language']] + "," + row[CSV_FORMAT['geography']]
-                tag_list = [x.strip() for x in specific_tags.split(',')]
-                for tag in tag_list:
-                    api.add_resource_tag(resource.id, tag.strip())
-                    
-                    
-                # add the urls/downloads
-                if row[CSV_FORMAT['preview']].strip() != "":
+            # add resource specific tags
+            specific_tags = row[CSV_FORMAT['health-domain']] + "," + row[CSV_FORMAT['audience']] + "," + row[CSV_FORMAT['language']] + "," + row[CSV_FORMAT['geography']]
+            tag_list = [x.strip() for x in specific_tags.split(',')]
+            for tag in tag_list:
+                api.add_resource_tag(resource.id, tag.strip())
+                
+                
+            # add the urls/downloads
+            if row[CSV_FORMAT['preview']].strip() != "":
+                if DEBUG:
                     print "adding url: " + row[CSV_FORMAT['preview']]
-                    resource_url = orb_resource_url()
-                    resource_url.title = "View/Download on Vimeo (" + row[CSV_FORMAT['language']] + ")"
-                    resource_url.url = row[CSV_FORMAT['preview']]
+                resource_url = orb_resource_url()
+                resource_url.title = "View/Download on Vimeo (" + row[CSV_FORMAT['language']] + ")"
+                resource_url.url = row[CSV_FORMAT['preview']]
+            
+                api.add_resource_url(resource.id,resource_url)
                 
-                    api.add_resource_url(resource.id,resource_url)
-                    
-                other_langs_list = ['French', 'Swahili', 'Somali', 'Amharic', 'Portugese', 'Dari']
-                for ol in other_langs_list:
-                    if row[CSV_FORMAT[ol]].strip() != "":
+            other_langs_list = ['French', 'Swahili', 'Somali', 'Amharic', 'Portugese', 'Dari']
+            for ol in other_langs_list:
+                if row[CSV_FORMAT[ol]].strip() != "":
+                    if DEBUG:
                         print "adding url: " + row[CSV_FORMAT[ol]]
-                        resource_url = orb_resource_url()
-                        resource_url.title = "View/Download on Vimeo ("+ ol +")"
-                        resource_url.url = row[CSV_FORMAT[ol]]
-                    
-                        api.add_resource_url(resource.id, resource_url)
-                        api.add_resource_tag(resource.id, ol.strip())
+                    resource_url = orb_resource_url()
+                    resource_url.title = "View/Download on Vimeo ("+ ol +")"
+                    resource_url.url = row[CSV_FORMAT[ol]]
+                
+                    api.add_resource_url(resource.id, resource_url)
+                    api.add_resource_tag(resource.id, ol.strip())
                         
     
 if __name__ == "__main__":
