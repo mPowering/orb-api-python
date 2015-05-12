@@ -35,21 +35,14 @@ class orb_api():
                            'study_time_number': resource.study_time_number,
                            'study_time_unit': resource.study_time_unit })
         
-        # make a string with the request type in it:
         method = "POST"
-        # create a handler. you can specify different handlers here (file uploads etc)
-        # but we go for the default
         handler = urllib2.HTTPHandler()
-        # create an openerdirector instance
         opener = urllib2.build_opener(handler)
-        # build a request
         request = urllib2.Request(self.base_url + API_PATH + 'resource/', data=data )
-        # add any other information you want
         request.add_header("Content-Type",'application/json')
         request.add_header('Authorization', 'ApiKey '+self.user_name + ":" + self.api_key)
-        # overload the get method function with a small anonymous function...
         request.get_method = lambda: method
-        # try it; don't forget to catch the result
+
         try:
             connection = opener.open(request)
         except urllib2.HTTPError,e:
@@ -161,9 +154,7 @@ class orb_api():
         request = urllib2.Request(self.base_url + resource_file_uri)
         request.add_header("Content-Type",'application/json')
         request.add_header('Authorization', 'ApiKey '+self.user_name + ":" + self.api_key)
-        # overload the get method function with a small anonymous function...
         request.get_method = lambda: method
-        # try it; don't forget to catch the result
         try:
             connection = opener.open(request)
         except urllib2.HTTPError,e:
@@ -197,21 +188,14 @@ class orb_api():
                            'file_size': resource_url.file_size,
                            'resource_id': resource_id,})
         
-        # make a string with the request type in it:
         method = "POST"
-        # create a handler. you can specify different handlers here (file uploads etc)
-        # but we go for the default
         handler = urllib2.HTTPHandler()
-        # create an openerdirector instance
         opener = urllib2.build_opener(handler)
-        # build a request
         request = urllib2.Request(self.base_url + API_PATH + 'resourceurl/', data=data )
-        # add any other information you want
         request.add_header("Content-Type",'application/json')
         request.add_header('Authorization', 'ApiKey '+self.user_name + ":" + self.api_key)
-        # overload the get method function with a small anonymous function...
         request.get_method = lambda: method
-        # try it; don't forget to catch the result
+
         try:
             connection = opener.open(request)
         except urllib2.HTTPError,e:
@@ -282,19 +266,13 @@ class orb_api():
         data = json.dumps({'name': tag_name })
         
         method = "POST"
-        # create a handler. you can specify different handlers here (file uploads etc)
-        # but we go for the default
         handler = urllib2.HTTPHandler()
-        # create an openerdirector instance
         opener = urllib2.build_opener(handler)
-        # build a request
         request = urllib2.Request(self.base_url + API_PATH + 'tag/', data=data )
-        # add any other information you want
         request.add_header("Content-Type",'application/json')
         request.add_header('Authorization', 'ApiKey '+self.user_name + ":" + self.api_key)
-        
         request.get_method = lambda: method
-        # try it; don't forget to catch the result
+
         try:
             connection = opener.open(request)
         except urllib2.HTTPError,e:
@@ -323,19 +301,12 @@ class orb_api():
         
         data  = json.dumps({'resource_id': resource_id, 'tag_id': tag_id })       
         method = "POST"
-        # create a handler. you can specify different handlers here (file uploads etc)
-        # but we go for the default
         handler = urllib2.HTTPHandler()
-        # create an openerdirector instance
         opener = urllib2.build_opener(handler)
-        # build a request
         request = urllib2.Request(self.base_url + API_PATH + 'resourcetag/', data=data )
-        # add any other information you want
         request.add_header("Content-Type",'application/json')
         request.add_header('Authorization', 'ApiKey '+self.user_name + ":" + self.api_key)
-        
         request.get_method = lambda: method
-        # try it; don't forget to catch the result
         try:
             connection = opener.open(request)
         except urllib2.HTTPError,e:
@@ -347,6 +318,7 @@ class orb_api():
             json_resp = json.loads(connection.read())
             error = json.loads(json_resp["error"])
             if error["code"] == ERROR_CODE_RESOURCETAG_EXISTS:
+                print error["message"]
                 return
             else:
                 raise ORBAPIException(error["message"],error["code"])
