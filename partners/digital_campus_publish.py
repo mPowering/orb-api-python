@@ -28,6 +28,8 @@ MPOWERING_DEFAULT_TAGS = ["Digital Campus",
                           "Tablet", 
                           "Creative Commons 2.0 (CC-BY-NC-SA)"]
 
+DEBUG = True
+
 from api import orb_api, orb_resource, orb_resource_file, orb_resource_url, ORBAPIResourceExistsException
 
 
@@ -36,6 +38,7 @@ def run(orb_url, orb_username, orb_key, db_name, db_user, db_passwd, update_file
     api.base_url = orb_url
     api.user_name = orb_username
     api.api_key = orb_key
+    api.verbose_output = DEBUG
     
     db = MySQLdb.connect(host="localhost",
                          user=db_user, 
@@ -61,11 +64,13 @@ def run(orb_url, orb_username, orb_key, db_name, db_user, db_passwd, update_file
             
             old_course_backups = glob.glob(os.path.join(OUTPUT_DIR_BASE, row['location_code'], 'moodle-backups', row['short_name'] + '-' + row['type'] + '*.mbz'))
             for old_file in old_course_backups:
-                print "Removing: " + old_file
+                if DEBUG:
+                    print "Removing: " + old_file
                 os.remove(old_file)
         
             new_file_name = row['short_name'] + "-" + row['type'] + "-" + file_date[0] +".mbz"
-            print "Copying over: " + new_file_name
+            if DEBUG:
+                print "Copying over: " + new_file_name
             shutil.copy2(file_name, os.path.join(OUTPUT_DIR_BASE, row['location_code'], 'moodle-backups', new_file_name))
             
             #cur2 = db.cursor(MySQLdb.cursors.DictCursor)
@@ -88,40 +93,29 @@ def run(orb_url, orb_username, orb_key, db_name, db_user, db_passwd, update_file
             resource.study_time_number = row['study_hours']
             resource.study_time_unit = 'hours' 
         
-        update = True
         try:
             resource.id = api.add_resource(resource)
-            update = False
-        except ORBAPIResourceExistsException, e:
-            print e.message + ", id no:" + str(e.pk)
-            resource.id = e.pk  
-             
-        '''
-        If resource has been created
-        '''
-        if not update:
-            # add resource icon
-            if row['icon']:
-                api.add_resource_image(resource.id,os.path.join(IMAGE_DIR_BASE, row['icon']))  
-        else: 
-            '''
-            if resource should be updated
-            '''
-            # get the resource id
-            resource_from_api = api.get_resource(resource)
-            
             # update the resource
+            #####
+        except ORBAPIResourceExistsException, e:
+            if DEBUG:
+                print e.message + ", id no:" + str(e.pk)
+            resource.id = e.pk  
+        
+        if row['icon']:
+            api.add_or_update_resource_image(resource.id, os.path.join(IMAGE_DIR_BASE, row['icon']))     
+ 
+        # get the resource id
+        resource_from_api = api.get_resource(resource)
+        
+        # remove all ResourceFiles
+        api.delete_resource_files(resource_from_api['files'])
             
-            # remove all ResourceFiles
-            for f in resource_from_api['files']:
-                api.delete_resource_file(f['resource_uri'])
-                
-            
-            # remove all ResourceURLs
-            
-            
-            # remove all tags for resource
-            
+        # remove all ResourceURLs
+        api.delete_resource_urls(resource_from_api['urls'])
+        
+        # remove all tags for resource
+        api.delete_resource_tags(resource_from_api['tags'])
          
         # add all the default tags
         for tag in MPOWERING_DEFAULT_TAGS:
