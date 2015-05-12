@@ -79,7 +79,7 @@ def run(orb_url, orb_username, orb_key, db_name, db_user, db_passwd, update_file
     '''
     Publish updates to the mPowering
     '''
-    cur.execute("""SELECT id, title, description, icon, tags, location_code, study_hours FROM dc_course WHERE mpowering = 1""")
+    cur.execute("""SELECT id, title, description, icon, tags, location_code, study_hours FROM dc_course WHERE mpowering = 1 """)
     
     additional_desc = "<p>This course is part of the Ethiopia Federal Ministry of Health approved upgrade training program for Health Extension Workers.</p>"
     
@@ -95,12 +95,12 @@ def run(orb_url, orb_username, orb_key, db_name, db_user, db_passwd, update_file
         
         try:
             resource.id = api.add_resource(resource)
-            # update the resource
-            #####
         except ORBAPIResourceExistsException, e:
             if DEBUG:
                 print e.message + ", id no:" + str(e.pk)
             resource.id = e.pk  
+            # upate the resource
+            api.update_resource(resource)
         
         if row['icon']:
             api.add_or_update_resource_image(resource.id, os.path.join(IMAGE_DIR_BASE, row['icon']))     

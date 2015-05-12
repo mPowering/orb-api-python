@@ -53,6 +53,7 @@ class orb_api():
          
         if self.verbose_output:
             print "Submitting: " + resource.title
+            
         if connection.code == HTML_UNAUTHORIZED:
             raise ORBAPIException("Unauthorized", HTML_UNAUTHORIZED)
         elif connection.code == HTML_BADREQUEST:
@@ -70,6 +71,59 @@ class orb_api():
             if self.verbose_output:
                 print "added: " + str(data_json['id']) + " : " + resource.title
             return data_json['id']
+        elif connection.code == HTML_TOO_MANY_REQUESTS:
+            raise ORBAPIException("Too many API requests - you have been throttled", HTML_TOO_MANY_REQUESTS)
+            exit()
+            
+        return
+    
+    def update_resource(self,resource):
+        # add in script pause to save overloading server and API limits
+        time.sleep(self.sleep)
+        
+        data = json.dumps({'title': resource.title, 
+                           'description': resource.description,
+                           'study_time_number': resource.study_time_number,
+                           'study_time_unit': resource.study_time_unit })
+        
+        method = "PUT"
+        handler = urllib2.HTTPHandler()
+        opener = urllib2.build_opener(handler)
+        request = urllib2.Request(self.base_url + API_PATH + 'resource/' + str(resource.id) + '/', data=data )
+        request.add_header("Content-Type",'application/json')
+        request.add_header('Authorization', 'ApiKey '+self.user_name + ":" + self.api_key)
+        request.get_method = lambda: method
+
+        try:
+            connection = opener.open(request)
+        except urllib2.HTTPError,e:
+            connection = e
+           
+        resp = connection.read()
+         
+        if self.verbose_output:
+            print "Updating: " + resource.title
+            
+        if connection.code == HTML_UNAUTHORIZED:
+            raise ORBAPIException("Unauthorized", HTML_UNAUTHORIZED)
+        elif connection.code == HTML_BADREQUEST:
+            json_resp = json.loads(resp)
+            error = json.loads(json_resp["error"])
+            if error["code"] == ERROR_CODE_RESOURCE_EXISTS:
+                raise ORBAPIResourceExistsException(error["message"], error["code"], error["pk"])
+            else:
+                raise ORBAPIException(error["message"],error["code"])
+        elif connection.code == HTML_SERVERERROR:
+            raise ORBAPIException("Connection or Server Error", HTML_SERVERERROR)
+        elif connection.code == HTML_CREATED:
+            # success
+            data_json = json.loads(resp)
+            if self.verbose_output:
+                print "added: " + str(data_json['id']) + " : " + resource.title
+            return data_json['id']
+        elif connection.code == HTML_TOO_MANY_REQUESTS:
+            raise ORBAPIException("Too many API requests - you have been throttled", HTML_TOO_MANY_REQUESTS)
+            exit()
             
         return
     
