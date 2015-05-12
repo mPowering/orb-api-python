@@ -8,6 +8,7 @@ import time
 from error_codes import * 
 from poster.encode import multipart_encode
 from poster.streaminghttp import register_openers
+import code
 
 API_PATH = '/api/v1/'
 DEFAULT_SLEEP = 0
@@ -63,8 +64,7 @@ class orb_api():
             json_resp = json.loads(resp)
             error = json.loads(json_resp["error"])
             if error["code"] == ERROR_CODE_RESOURCE_EXISTS:
-                print error["message"]
-                print "Updating..."
+                raise ORBAPIResourceExistsException(error["message"], error["code"], error["pk"])
             else:
                 raise ORBAPIException(error["message"],error["code"])
         elif connection.code == HTML_SERVERERROR:
@@ -78,6 +78,22 @@ class orb_api():
         return
     
     def get_resource(self, resource):
+        
+        req = urllib2.Request(self.base_url + API_PATH + 'resource/' + str(resource.id))
+        req.add_header('Authorization', 'ApiKey '+self.user_name + ":" + self.api_key)
+        req.add_header('Accept', 'application/json')
+
+        connection = urllib2.urlopen(req)
+
+        resp = connection.read()
+        
+        if connection.code == HTML_OK:
+            data_json = json.loads(resp)
+            return data_json
+        elif resp.code == HTML_UNAUTHORIZED:
+            raise ORBAPIException("Unauthorized", HTML_UNAUTHORIZED)
+        else:
+            raise ORBAPIException("Connection or Server Error", HTML_SERVERERROR)
         return
     
     def add_resource_image(self, resource_id, image_file):
@@ -133,6 +149,41 @@ class orb_api():
         elif resp.code == HTML_CREATED:
             print "Uploaded: " + resource_file.title
         
+        return
+    
+    def delete_resource_file(self,resource_file_uri):
+        # add in script pause to save overloading server and API limits
+        time.sleep(DEFAULT_SLEEP)
+
+        method = "DELETE"
+        handler = urllib2.HTTPHandler()
+        opener = urllib2.build_opener(handler)
+        request = urllib2.Request(self.base_url + resource_file_uri)
+        request.add_header("Content-Type",'application/json')
+        request.add_header('Authorization', 'ApiKey '+self.user_name + ":" + self.api_key)
+        # overload the get method function with a small anonymous function...
+        request.get_method = lambda: method
+        # try it; don't forget to catch the result
+        try:
+            connection = opener.open(request)
+        except urllib2.HTTPError,e:
+            connection = e
+           
+        resp = connection.read()
+
+        if connection.code == HTML_UNAUTHORIZED:
+            raise ORBAPIException("Unauthorized", HTML_UNAUTHORIZED)
+        elif connection.code == HTML_BADREQUEST:
+            json_resp = json.loads(resp)
+            error = json.loads(json_resp["error"])
+            if error["code"] == ERROR_CODE_RESOURCE_EXISTS:
+                print error["message"]
+            else:
+                raise ORBAPIException(error["message"],error["code"])
+        elif connection.code == HTML_SERVERERROR:
+            raise ORBAPIException("Connection or Server Error", HTML_SERVERERROR)
+        elif connection.code == HTML_NO_CONTENT:
+            pass # success
         return
     
     def add_resource_url(self,resource_id, resource_url):
@@ -210,7 +261,7 @@ class orb_api():
 
         resp = connection.read()
         
-        if connection.code == 200:
+        if connection.code == HTML_OK:
             data_json = json.loads(resp)
             if data_json['meta']['total_count'] == 1:
                 tag = data_json['objects'][0]
@@ -293,9 +344,12 @@ class orb_api():
         if connection.code == HTML_UNAUTHORIZED:
             raise ORBAPIException("Unauthorized", HTML_UNAUTHORIZED)
         elif connection.code == HTML_BADREQUEST:
-            json_resp = json.loads(resp.read())
+            json_resp = json.loads(connection.read())
             error = json.loads(json_resp["error"])
-            raise ORBAPIException(error["message"],error["code"])
+            if error["code"] == ERROR_CODE_RESOURCETAG_EXISTS:
+                return
+            else:
+                raise ORBAPIException(error["message"],error["code"])
         elif connection.code == HTML_SERVERERROR:
             raise ORBAPIException("Connection or Server Error", HTML_SERVERERROR)
         elif connection.code == HTML_CREATED:
@@ -335,6 +389,21 @@ class ORBAPIException(Exception):
     
         # Now for your custom code...
         #self.errors = errors
+        
+class ORBAPIResourceExistsException(Exception):
+    pk = None
+    code = None
+    message = None
+    
+    def __init__(self, message, error_code, pk):
+        
+        # Call the base class constructor with the parameters it needs
+        super(ORBAPIResourceExistsException, self).__init__(str(error_code) + ": " + message)
+    
+        # Now for your custom code...
+        self.pk = pk
+        self.code = code
+        self.message = message
        
     
     
