@@ -35,9 +35,7 @@ CSV_FORMAT = {
               'Somali':13,
               'Amharic':14,
               'Portugese':15,
-              'Dari':16
-              
-              
+              'Dari':16,
               }
 
 MPOWERING_DEFAULT_TAGS = ["Medical Aid Films",
@@ -45,7 +43,7 @@ MPOWERING_DEFAULT_TAGS = ["Medical Aid Films",
                           "Laptop", 
                           "Smartphone", 
                           "Tablet", 
-                          "Creative Commons 3.0 (CC-BY-NC-ND)"]
+                          "Creative Commons 3.0 (CC-BY-NC-ND)",]
 
 DEBUG = True
 
@@ -78,7 +76,8 @@ def run(orb_url, orb_username, orb_key):
             if response.code == HTML_OK:
                 vimeo_data = json.loads(response.read())
             else:
-                print "Error connecting to Vimeo server"
+                if DEBUG:
+                    print "Error connecting to Vimeo server"
                 continue 
             
             resource.description = row[CSV_FORMAT['description']].decode('utf-8') + '<div style="text-align:center;">' + vimeo_data['html'].decode('utf-8') + '</div>'
@@ -89,14 +88,13 @@ def run(orb_url, orb_username, orb_key):
                 
             try:
                 resource.id = api.add_resource(resource)
-                # update the resource
-                #####
             except ORBAPIResourceExistsException, e:
                 if DEBUG:
                     print e.message + ", id no:" + str(e.pk)
                 resource.id = e.pk  
+                api.update_resource(resource)
      
- 
+            
             # get the resource id
             resource_from_api = api.get_resource(resource)
             
