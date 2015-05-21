@@ -28,23 +28,12 @@ CSV_FORMAT = {
               'study_time': 6,
               }
 
-'''
-              'health-domain': 2,
-              'audience': 3,
-              'geography': 4,
-              'language': 7,
-              'Spanish': 8,
-              'French':9,
-              'Swahili':10,
-              }
-'''
-
 MPOWERING_DEFAULT_TAGS = ["Digital Green",
                           "Video",  
                           "Laptop", 
                           "Smartphone", 
                           "Tablet", 
-                          "Creative Commons 3.0 (CC-BY-NC-ND)",
+                          "Creative Commons 2.5 (CC-BY-NC-SA-IN)",
                           "Community Health Worker",
                           "Volunteer Community health Worker"]
 
@@ -57,10 +46,6 @@ def run(orb_url, orb_username, orb_key, youtube_key):
     api.user_name = orb_username
     api.api_key = orb_key  
     api.verbose_output = DEBUG  
-    
-    
-    f = codecs.open('output.txt', 'w', 'utf-8')
-    f.write('"Title","YouTube link", "Description", "Health Domain", "Geography", "Language", "Study Time"\n')
     
     with codecs.open(INFILE, 'rb', 'utf-8') as csvfile:
         file_reader = csv.reader(csvfile, delimiter=',', quotechar='"')
@@ -90,28 +75,14 @@ def run(orb_url, orb_username, orb_key, youtube_key):
             response = urllib2.urlopen(req)
             video_data = json.loads(response.read())
 
-            description = video_data['items'][0]['snippet']['description'].replace("For more information and related videos visit us on http://www.digitalgreen.org/", "").replace('"',"")
-            
-            print row[CSV_FORMAT['study_time']].encode('utf-8').strip()
-            
-            
-            if row[CSV_FORMAT['study_time']].encode('utf-8').strip():
-                study_time = row[CSV_FORMAT['study_time']]
+            if row[CSV_FORMAT['description']].encode('utf-8').strip():
+                description  = row[CSV_FORMAT['description']]
             else:
-                study_time = ''
+                description = video_data['items'][0]['snippet']['description'].replace("For more information and related videos visit us on http://www.digitalgreen.org/", "").replace('"',"")
             
-            f.write(str('"{title}","{youtube}","{desc}", "{domain}", "{geo}", "{lang}","{time}"\n').format(                           
-                                                                            title = row[CSV_FORMAT['title']], 
-                                                                            youtube = row[CSV_FORMAT['youtube_link']],
-                                                                            desc = description,
-                                                                            domain = row[CSV_FORMAT['health_domain']],
-                                                                            geo = row[CSV_FORMAT['geography']],
-                                                                            lang = row[CSV_FORMAT['language']],
-                                                                            time = study_time
+            if row[CSV_FORMAT['description']].strip() == "":
+                continue
             
-                                                                           ))
-            print "-------------------"
-            continue
             resource.description = description + '<div style="text-align:center;">' +\
                          '<iframe width="560" height="315" src="https://www.youtube.com/embed/'+\
                           video_id +\
