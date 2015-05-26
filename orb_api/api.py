@@ -64,6 +64,8 @@ class orb_api():
             else:
                 raise ORBAPIException(error["message"],error["code"])
         elif connection.code == HTML_SERVERERROR:
+            if self.verbose_output:
+                print resp
             raise ORBAPIException("Connection or Server Error", HTML_SERVERERROR)
         elif connection.code == HTML_CREATED:
             # success

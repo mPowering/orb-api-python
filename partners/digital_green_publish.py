@@ -26,6 +26,7 @@ CSV_FORMAT = {
               'geography': 4,
               'language': 5,
               'study_time': 6,
+              'dg_weblink': 7,
               }
 
 MPOWERING_DEFAULT_TAGS = ["Digital Green",
@@ -86,7 +87,7 @@ def run(orb_url, orb_username, orb_key, youtube_key):
             resource.description = description + '<div style="text-align:center;">' +\
                          '<iframe width="560" height="315" src="https://www.youtube.com/embed/'+\
                           video_id +\
-                          '" frameborder="0" allowfullscreen></iframe></div>'
+                          '?rel=0" frameborder="0" allowfullscreen></iframe></div>'
         
             if row[CSV_FORMAT['study_time']] != '':
                 resource.study_time_number = row[CSV_FORMAT['study_time']]
@@ -140,6 +141,13 @@ def run(orb_url, orb_username, orb_key, youtube_key):
             
                 api.add_resource_url(resource.id, resource_url)
                 api.add_resource_tag(resource.id, language)
+                
+                # add link to Digital Green website
+                resource_url = orb_resource_url()
+                resource_url.title = "View on Digital Green website"
+                resource_url.url = row[CSV_FORMAT['dg_weblink']]
+            
+                api.add_resource_url(resource.id, resource_url)
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
