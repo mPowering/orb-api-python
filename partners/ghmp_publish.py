@@ -73,7 +73,7 @@ def run(orb_url, orb_username, orb_key):
             resource.description = row[CSV_FORMAT['description']].decode('utf-8') + '<div style="text-align:center;">' +\
                          '<iframe width="560" height="315" src="https://www.youtube.com/embed/'+\
                           video_id +\
-                          '" frameborder="0" allowfullscreen></iframe></div>'
+                          '?rel=0" frameborder="0" allowfullscreen></iframe></div>'
         
             if row[CSV_FORMAT['study_time']] != '':
                 resource.study_time_number = row[CSV_FORMAT['study_time']]
@@ -87,7 +87,6 @@ def run(orb_url, orb_username, orb_key):
                 resource.id = e.pk  
                 api.update_resource(resource)
      
-            
             # get the resource id
             resource_from_api = api.get_resource(resource)
             
@@ -127,7 +126,7 @@ def run(orb_url, orb_username, orb_key):
                 
                     api.add_resource_url(resource.id, resource_url)
                     api.add_resource_tag(resource.id, lang.strip())
-    
+                
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("orb_url", help="ORB url")
