@@ -34,7 +34,8 @@ class orb_api():
         data = json.dumps({'title': resource.title, 
                            'description': resource.description,
                            'study_time_number': resource.study_time_number,
-                           'study_time_unit': resource.study_time_unit })
+                           'study_time_unit': resource.study_time_unit,
+                           'attribution': resource.attribution })
         
         method = "POST"
         handler = urllib2.HTTPHandler()
@@ -86,7 +87,8 @@ class orb_api():
         data = json.dumps({'title': resource.title, 
                            'description': resource.description,
                            'study_time_number': resource.study_time_number,
-                           'study_time_unit': resource.study_time_unit })
+                           'study_time_unit': resource.study_time_unit,
+                           'attribution': resource.attribution })
         
         method = "PUT"
         handler = urllib2.HTTPHandler()
@@ -473,6 +475,7 @@ class orb_resource():
     description = None
     study_time_number = 0
     study_time_unit = None
+    attribution = None
     
 class orb_resource_file():
     file = ''
