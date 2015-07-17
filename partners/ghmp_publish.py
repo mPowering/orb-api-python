@@ -73,7 +73,7 @@ def run(orb_url, orb_username, orb_key):
             resource.description = row[CSV_FORMAT['description']].decode('utf-8') + '<div style="text-align:center;">' +\
                          '<iframe width="560" height="315" src="https://www.youtube.com/embed/'+\
                           video_id +\
-                          '?rel=0" frameborder="0" allowfullscreen></iframe></div>'
+                          '?rel=0&html5=1" frameborder="0" allowfullscreen></iframe></div>'
         
             if row[CSV_FORMAT['study_time']] != '':
                 resource.study_time_number = row[CSV_FORMAT['study_time']]
