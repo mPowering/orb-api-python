@@ -421,7 +421,7 @@ class orb_api():
             error = json.loads(json_resp["error"])
             if error["code"] == ERROR_CODE_TAG_EMPTY:
                 return
-            raise ORBAPIException(error["message"],error["code"])
+            #raise ORBAPIException(error["message"],error["code"])
         elif connection.code == HTML_SERVERERROR:
             if self.verbose_output:
                 print resp
@@ -456,9 +456,9 @@ class orb_api():
             if error["code"] == ERROR_CODE_RESOURCETAG_EXISTS:
                 if self.verbose_output:
                     print error["message"]
-                return
             else:
-                raise ORBAPIException(error["message"],error["code"])
+                # raise ORBAPIException(error["message"],error["code"])
+                pass
         elif connection.code == HTML_SERVERERROR:
             raise ORBAPIException("Connection or Server Error", HTML_SERVERERROR)
         elif connection.code == HTML_CREATED:

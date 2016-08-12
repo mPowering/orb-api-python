@@ -38,6 +38,15 @@ CSV_FORMAT = {
               'Dari':16,
               'Bemba':17,
               'Luganda':18,
+              'Yoruba':19,
+              'Hausa': 20,
+              'Saint Lucian Creole': 21,
+              'Khmer':22,
+              'Burmese':23,
+              'Vietnamese':24,
+              'Indonesian':25,
+              'Kinyarwanda':26,
+              
               }
 
 MPOWERING_DEFAULT_TAGS = ["Medical Aid Films",
@@ -136,7 +145,22 @@ def run(orb_url, orb_username, orb_key):
             
                 api.add_resource_url(resource.id,resource_url)
                 
-            other_langs_list = ['French', 'Swahili', 'Somali', 'Amharic', 'Portugese', 'Dari', 'Bemba','Luganda']
+            other_langs_list = ['French', 
+                                'Swahili', 
+                                'Somali', 
+                                'Amharic', 
+                                'Portugese', 
+                                'Dari', 
+                                'Bemba', 
+                                'Luganda', 
+                                'Yoruba',
+                                'Hausa',
+                                'Saint Lucian Creole',
+                                'Khmer',
+                                'Burmese',
+                                'Vietnamese',
+                                'Indonesian',
+                                'Kinyarwanda',]
             for ol in other_langs_list:
                 if row[CSV_FORMAT[ol]].strip() != "":
                     if DEBUG:
