@@ -339,7 +339,9 @@ class orb_api():
         # find the tag id 
         tag_name_obj = { "name": tag_name }
         
-        req = urllib2.Request(self.base_url + API_PATH + 'tag/?' + urllib.urlencode(tag_name_obj))
+        url = self.base_url + API_PATH + 'tag/?' + urllib.urlencode(tag_name_obj)
+        print url
+        req = urllib2.Request(url)
         req.add_header('Authorization', 'ApiKey '+self.user_name + ":" + self.api_key)
         req.add_header('Accept', 'application/json')
 
@@ -421,7 +423,7 @@ class orb_api():
             error = json.loads(json_resp["error"])
             if error["code"] == ERROR_CODE_TAG_EMPTY:
                 return
-            #raise ORBAPIException(error["message"],error["code"])
+            raise ORBAPIException(error["message"],error["code"])
         elif connection.code == HTML_SERVERERROR:
             if self.verbose_output:
                 print resp
@@ -456,9 +458,10 @@ class orb_api():
             if error["code"] == ERROR_CODE_RESOURCETAG_EXISTS:
                 if self.verbose_output:
                     print error["message"]
+                return
             else:
-                # raise ORBAPIException(error["message"],error["code"])
-                pass
+                raise ORBAPIException(error["message"],error["code"])
+                #pass
         elif connection.code == HTML_SERVERERROR:
             raise ORBAPIException("Connection or Server Error", HTML_SERVERERROR)
         elif connection.code == HTML_CREATED:
