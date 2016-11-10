@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-import code
 import json
 import re
 import time
@@ -10,6 +9,8 @@ import urllib2
 from error_codes import *
 from poster.encode import multipart_encode
 from poster.streaminghttp import register_openers
+
+from orb_api.exceptions import OrbApiException, OrbApiResourceExists
 
 API_PATH = '/api/v1/'
 
@@ -65,18 +66,18 @@ class OrbClient(object):
             print("Submitting: " + resource.title)
 
         if connection.code == HTML_UNAUTHORIZED:
-            raise ORBAPIException("Unauthorized", HTML_UNAUTHORIZED)
+            raise OrbApiException("Unauthorized", HTML_UNAUTHORIZED)
         elif connection.code == HTML_BADREQUEST:
             json_resp = json.loads(resp)
             error = json.loads(json_resp["error"])
             if error["code"] == ERROR_CODE_RESOURCE_EXISTS:
-                raise ORBAPIResourceExistsException(error["message"], error["code"], error["pk"])
+                raise OrbApiResourceExists(error["message"], error["code"], error["pk"])
             else:
-                raise ORBAPIException(error["message"],error["code"])
+                raise OrbApiException(error["message"], error["code"])
         elif connection.code == HTML_SERVERERROR:
             if self.verbose_output:
                 print(resp)
-            raise ORBAPIException("Connection or Server Error", HTML_SERVERERROR)
+            raise OrbApiException("Connection or Server Error", HTML_SERVERERROR)
         elif connection.code == HTML_CREATED:
             # success
             data_json = json.loads(resp)
@@ -84,7 +85,7 @@ class OrbClient(object):
                 print("added: " + str(data_json['id']) + " : " + resource.title)
             return data_json['id']
         elif connection.code == HTML_TOO_MANY_REQUESTS:
-            raise ORBAPIException("Too many API requests - you have been throttled", HTML_TOO_MANY_REQUESTS)
+            raise OrbApiException("Too many API requests - you have been throttled", HTML_TOO_MANY_REQUESTS)
             exit()
 
         return
@@ -118,16 +119,16 @@ class OrbClient(object):
             print("Updating: " + resource.title)
 
         if connection.code == HTML_UNAUTHORIZED:
-            raise ORBAPIException("Unauthorized", HTML_UNAUTHORIZED)
+            raise OrbApiException("Unauthorized", HTML_UNAUTHORIZED)
         elif connection.code == HTML_BADREQUEST:
             json_resp = json.loads(resp)
             error = json.loads(json_resp["error"])
             if error["code"] == ERROR_CODE_RESOURCE_EXISTS:
-                raise ORBAPIResourceExistsException(error["message"], error["code"], error["pk"])
+                raise OrbApiResourceExists(error["message"], error["code"], error["pk"])
             else:
-                raise ORBAPIException(error["message"],error["code"])
+                raise OrbApiException(error["message"], error["code"])
         elif connection.code == HTML_SERVERERROR:
-            raise ORBAPIException("Connection or Server Error", HTML_SERVERERROR)
+            raise OrbApiException("Connection or Server Error", HTML_SERVERERROR)
         elif connection.code == HTML_CREATED:
             # success
             data_json = json.loads(resp)
@@ -135,7 +136,7 @@ class OrbClient(object):
                 print("added: " + str(data_json['id']) + " : " + resource.title)
             return data_json['id']
         elif connection.code == HTML_TOO_MANY_REQUESTS:
-            raise ORBAPIException("Too many API requests - you have been throttled", HTML_TOO_MANY_REQUESTS)
+            raise OrbApiException("Too many API requests - you have been throttled", HTML_TOO_MANY_REQUESTS)
             exit()
 
         return
@@ -154,9 +155,9 @@ class OrbClient(object):
             data_json = json.loads(resp)
             return data_json
         elif resp.code == HTML_UNAUTHORIZED:
-            raise ORBAPIException("Unauthorized", HTML_UNAUTHORIZED)
+            raise OrbApiException("Unauthorized", HTML_UNAUTHORIZED)
         else:
-            raise ORBAPIException("Connection or Server Error", HTML_SERVERERROR)
+            raise OrbApiException("Connection or Server Error", HTML_SERVERERROR)
         return
 
     def add_or_update_resource_image(self, resource_id, image_file):
@@ -172,13 +173,13 @@ class OrbClient(object):
 
         resp = urllib2.urlopen(request)
         if resp.code == HTML_UNAUTHORIZED:
-            raise ORBAPIException("Unauthorized", HTML_UNAUTHORIZED)
+            raise OrbApiException("Unauthorized", HTML_UNAUTHORIZED)
         elif resp.code == HTML_BADREQUEST:
             json_resp = json.loads(resp.read())
             error = json.loads(json_resp["error"])
-            raise ORBAPIException(error["message"],error["code"])
+            raise OrbApiException(error["message"], error["code"])
         elif resp.code == HTML_SERVERERROR:
-           raise ORBAPIException("Connection or Server Error", HTML_SERVERERROR)
+           raise OrbApiException("Connection or Server Error", HTML_SERVERERROR)
         elif resp.code == HTML_CREATED:
             if self.verbose_output:
                 print("Uploaded Image: " + image_file)
@@ -203,13 +204,13 @@ class OrbClient(object):
         resp = urllib2.urlopen(request)
 
         if resp.code == HTML_UNAUTHORIZED:
-            raise ORBAPIException("Unauthorized", HTML_UNAUTHORIZED)
+            raise OrbApiException("Unauthorized", HTML_UNAUTHORIZED)
         elif resp.code == HTML_BADREQUEST:
             json_resp = json.loads(resp.read())
             error = json.loads(json_resp["error"])
-            raise ORBAPIException(error["message"],error["code"])
+            raise OrbApiException(error["message"], error["code"])
         elif resp.code == HTML_SERVERERROR:
-            raise ORBAPIException("Connection or Server Error", HTML_SERVERERROR)
+            raise OrbApiException("Connection or Server Error", HTML_SERVERERROR)
         elif resp.code == HTML_CREATED:
             if self.verbose_output:
                 print("Uploaded: " + resource_file.title)
@@ -235,7 +236,7 @@ class OrbClient(object):
             resp = connection.read()
 
             if connection.code == HTML_UNAUTHORIZED:
-                raise ORBAPIException("Unauthorized", HTML_UNAUTHORIZED)
+                raise OrbApiException("Unauthorized", HTML_UNAUTHORIZED)
             elif connection.code == HTML_BADREQUEST:
                 json_resp = json.loads(resp)
                 error = json.loads(json_resp["error"])
@@ -243,9 +244,9 @@ class OrbClient(object):
                     if self.verbose_output:
                         print(error["message"])
                 else:
-                    raise ORBAPIException(error["message"],error["code"])
+                    raise OrbApiException(error["message"], error["code"])
             elif connection.code == HTML_SERVERERROR:
-                raise ORBAPIException("Connection or Server Error", HTML_SERVERERROR)
+                raise OrbApiException("Connection or Server Error", HTML_SERVERERROR)
             elif connection.code == HTML_NO_CONTENT:
                 pass # success
         return
@@ -279,7 +280,7 @@ class OrbClient(object):
         if self.verbose_output:
             print("Adding: " + resource_url.title)
         if connection.code == HTML_UNAUTHORIZED:
-            raise ORBAPIException("Unauthorized", HTML_UNAUTHORIZED)
+            raise OrbApiException("Unauthorized", HTML_UNAUTHORIZED)
         elif connection.code == HTML_BADREQUEST:
             json_resp = json.loads(resp)
             error = json.loads(json_resp["error"])
@@ -288,9 +289,9 @@ class OrbClient(object):
                     print(error["message"])
                     print("Updating...")
             else:
-                raise ORBAPIException(error["message"],error["code"])
+                raise OrbApiException(error["message"], error["code"])
         elif connection.code == HTML_SERVERERROR:
-            raise ORBAPIException("Connection or Server Error", HTML_SERVERERROR)
+            raise OrbApiException("Connection or Server Error", HTML_SERVERERROR)
         elif connection.code == HTML_CREATED:
             # success
             data_json = json.loads(resp)
@@ -319,7 +320,7 @@ class OrbClient(object):
             resp = connection.read()
 
             if connection.code == HTML_UNAUTHORIZED:
-                raise ORBAPIException("Unauthorized", HTML_UNAUTHORIZED)
+                raise OrbApiException("Unauthorized", HTML_UNAUTHORIZED)
             elif connection.code == HTML_BADREQUEST:
                 json_resp = json.loads(resp)
                 error = json.loads(json_resp["error"])
@@ -327,9 +328,9 @@ class OrbClient(object):
                     if self.verbose_output:
                         print(error["message"])
                 else:
-                    raise ORBAPIException(error["message"],error["code"])
+                    raise OrbApiException(error["message"], error["code"])
             elif connection.code == HTML_SERVERERROR:
-                raise ORBAPIException("Connection or Server Error", HTML_SERVERERROR)
+                raise OrbApiException("Connection or Server Error", HTML_SERVERERROR)
             elif connection.code == HTML_NO_CONTENT:
                 pass # success
         return
@@ -395,13 +396,13 @@ class OrbClient(object):
             resp = connection.read()
 
             if connection.code == HTML_UNAUTHORIZED:
-                raise ORBAPIException("Unauthorized", HTML_UNAUTHORIZED)
+                raise OrbApiException("Unauthorized", HTML_UNAUTHORIZED)
             elif connection.code == HTML_BADREQUEST:
                 json_resp = json.loads(resp)
                 error = json.loads(json_resp["error"])
-                raise ORBAPIException(error["message"],error["code"])
+                raise OrbApiException(error["message"], error["code"])
             elif connection.code == HTML_SERVERERROR:
-                raise ORBAPIException("Connection or Server Error", HTML_SERVERERROR)
+                raise OrbApiException("Connection or Server Error", HTML_SERVERERROR)
             elif connection.code == HTML_NO_CONTENT:
                 pass # success
         return
@@ -426,17 +427,17 @@ class OrbClient(object):
 
         resp = connection.read()
         if connection.code == HTML_UNAUTHORIZED:
-            raise ORBAPIException("Unauthorized", HTML_UNAUTHORIZED)
+            raise OrbApiException("Unauthorized", HTML_UNAUTHORIZED)
         elif connection.code == HTML_BADREQUEST:
             json_resp = json.loads(resp)
             error = json.loads(json_resp["error"])
             if error["code"] == ERROR_CODE_TAG_EMPTY:
                 return
-            raise ORBAPIException(error["message"],error["code"])
+            raise OrbApiException(error["message"], error["code"])
         elif connection.code == HTML_SERVERERROR:
             if self.verbose_output:
                 print(resp)
-            raise ORBAPIException("Connection or Server Error", HTML_SERVERERROR)
+            raise OrbApiException("Connection or Server Error", HTML_SERVERERROR)
         elif connection.code == HTML_CREATED:
             # success
             data_json = json.loads(resp)
@@ -460,7 +461,7 @@ class OrbClient(object):
             connection = e
 
         if connection.code == HTML_UNAUTHORIZED:
-            raise ORBAPIException("Unauthorized", HTML_UNAUTHORIZED)
+            raise OrbApiException("Unauthorized", HTML_UNAUTHORIZED)
         elif connection.code == HTML_BADREQUEST:
             json_resp = json.loads(connection.read())
             error = json.loads(json_resp["error"])
@@ -469,10 +470,10 @@ class OrbClient(object):
                     print(error["message"])
                 return
             else:
-                raise ORBAPIException(error["message"],error["code"])
+                raise OrbApiException(error["message"], error["code"])
                 #pass
         elif connection.code == HTML_SERVERERROR:
-            raise ORBAPIException("Connection or Server Error", HTML_SERVERERROR)
+            raise OrbApiException("Connection or Server Error", HTML_SERVERERROR)
         elif connection.code == HTML_CREATED:
             # success
             resp = connection.read()
@@ -504,32 +505,6 @@ class orb_resource_url():
     description = ''
     order_by = 0
     file_size = 0
-
-
-class ORBAPIException(Exception):
-    def __init__(self, message, error_code):
-
-        # Call the base class constructor with the parameters it needs
-        super(ORBAPIException, self).__init__(str(error_code) + ": " + message)
-
-        # Now for your custom code...
-        #self.errors = errors
-
-
-class ORBAPIResourceExistsException(Exception):
-    pk = None
-    code = None
-    message = None
-
-    def __init__(self, message, error_code, pk):
-
-        # Call the base class constructor with the parameters it needs
-        super(ORBAPIResourceExistsException, self).__init__(str(error_code) + ": " + message)
-
-        # Now for your custom code...
-        self.pk = pk
-        self.code = code
-        self.message = message
 
 
 def orb_api():
