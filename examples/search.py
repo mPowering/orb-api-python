@@ -18,7 +18,7 @@ def run(query):
     api.api_key = '39b4043c69b8db27ddba761ba82479d00c8ccbb1'
     results = api.search(query)
     for result in results['objects']:
-        print result['title']
+        print(result['title'])
 
 
 if __name__ == "__main__":

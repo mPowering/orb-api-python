@@ -1,4 +1,5 @@
 #!/usr/bin/python
+
 import code
 import json
 import re
@@ -12,20 +13,28 @@ from poster.streaminghttp import register_openers
 
 API_PATH = '/api/v1/'
 
-class orb_api():
-    base_url = ''
-    user_name = ''
-    api_key = ''
-    sleep = 0
-    verbose_output = False
+
+class OrbClient(object):
+    """
+    Client class for accessing the ORB API
+
+    >>> client = OrbClient(host="http://localhost", username="bob", api_key="jdkjfkajkj")
+
+    """
+
+    def __init(self, host, username, api_key, sleep=0, verbose=False):
+        self.base_url = host
+        self.user_name = username
+        self.api_key = api_key
+        self.sleep = sleep
+        self.verbose_output = verbose
 
     def search(self, query):
         req = urllib2.Request(self.base_url + API_PATH + 'resource/search/?q='+query)
         req.add_header('Authorization', 'ApiKey '+self.user_name + ":" + self.api_key)
         resp = urllib2.urlopen(req)
         data = resp.read()
-        dataJSON = json.loads(data)
-        return dataJSON
+        return json.loads(data)
 
     def add_resource(self,resource):
         # add in script pause to save overloading server and API limits
@@ -47,13 +56,13 @@ class orb_api():
 
         try:
             connection = opener.open(request)
-        except urllib2.HTTPError,e:
+        except urllib2.HTTPError as e:
             connection = e
 
         resp = connection.read()
 
         if self.verbose_output:
-            print "Submitting: " + resource.title
+            print("Submitting: " + resource.title)
 
         if connection.code == HTML_UNAUTHORIZED:
             raise ORBAPIException("Unauthorized", HTML_UNAUTHORIZED)
@@ -66,13 +75,13 @@ class orb_api():
                 raise ORBAPIException(error["message"],error["code"])
         elif connection.code == HTML_SERVERERROR:
             if self.verbose_output:
-                print resp
+                print(resp)
             raise ORBAPIException("Connection or Server Error", HTML_SERVERERROR)
         elif connection.code == HTML_CREATED:
             # success
             data_json = json.loads(resp)
             if self.verbose_output:
-                print "added: " + str(data_json['id']) + " : " + resource.title
+                print("added: " + str(data_json['id']) + " : " + resource.title)
             return data_json['id']
         elif connection.code == HTML_TOO_MANY_REQUESTS:
             raise ORBAPIException("Too many API requests - you have been throttled", HTML_TOO_MANY_REQUESTS)
@@ -100,13 +109,13 @@ class orb_api():
 
         try:
             connection = opener.open(request)
-        except urllib2.HTTPError,e:
+        except urllib2.HTTPError as e:
             connection = e
 
         resp = connection.read()
 
         if self.verbose_output:
-            print "Updating: " + resource.title
+            print("Updating: " + resource.title)
 
         if connection.code == HTML_UNAUTHORIZED:
             raise ORBAPIException("Unauthorized", HTML_UNAUTHORIZED)
@@ -123,7 +132,7 @@ class orb_api():
             # success
             data_json = json.loads(resp)
             if self.verbose_output:
-                print "added: " + str(data_json['id']) + " : " + resource.title
+                print("added: " + str(data_json['id']) + " : " + resource.title)
             return data_json['id']
         elif connection.code == HTML_TOO_MANY_REQUESTS:
             raise ORBAPIException("Too many API requests - you have been throttled", HTML_TOO_MANY_REQUESTS)
@@ -172,7 +181,7 @@ class orb_api():
            raise ORBAPIException("Connection or Server Error", HTML_SERVERERROR)
         elif resp.code == HTML_CREATED:
             if self.verbose_output:
-                print "Uploaded Image: " + image_file
+                print("Uploaded Image: " + image_file)
 
         return
 
@@ -203,7 +212,7 @@ class orb_api():
             raise ORBAPIException("Connection or Server Error", HTML_SERVERERROR)
         elif resp.code == HTML_CREATED:
             if self.verbose_output:
-                print "Uploaded: " + resource_file.title
+                print("Uploaded: " + resource_file.title)
 
         return
 
@@ -220,7 +229,7 @@ class orb_api():
             request.get_method = lambda: method
             try:
                 connection = opener.open(request)
-            except urllib2.HTTPError,e:
+            except urllib2.HTTPError as e:
                 connection = e
 
             resp = connection.read()
@@ -232,7 +241,7 @@ class orb_api():
                 error = json.loads(json_resp["error"])
                 if error["code"] == ERROR_CODE_RESOURCE_EXISTS:
                     if self.verbose_output:
-                        print error["message"]
+                        print(error["message"])
                 else:
                     raise ORBAPIException(error["message"],error["code"])
             elif connection.code == HTML_SERVERERROR:
@@ -262,13 +271,13 @@ class orb_api():
 
         try:
             connection = opener.open(request)
-        except urllib2.HTTPError,e:
+        except urllib2.HTTPError as e:
             connection = e
 
         resp = connection.read()
 
         if self.verbose_output:
-            print "Adding: " + resource_url.title
+            print("Adding: " + resource_url.title)
         if connection.code == HTML_UNAUTHORIZED:
             raise ORBAPIException("Unauthorized", HTML_UNAUTHORIZED)
         elif connection.code == HTML_BADREQUEST:
@@ -276,8 +285,8 @@ class orb_api():
             error = json.loads(json_resp["error"])
             if error["code"] == ERROR_CODE_RESOURCE_EXISTS:
                 if self.verbose_output:
-                    print error["message"]
-                    print "Updating..."
+                    print(error["message"])
+                    print("Updating...")
             else:
                 raise ORBAPIException(error["message"],error["code"])
         elif connection.code == HTML_SERVERERROR:
@@ -286,7 +295,7 @@ class orb_api():
             # success
             data_json = json.loads(resp)
             if self.verbose_output:
-                print "added: " + str(data_json['id']) + " : " + resource_url.title
+                print("added: " + str(data_json['id']) + " : " + resource_url.title)
             return data_json['id']
 
         return
@@ -304,7 +313,7 @@ class orb_api():
             request.get_method = lambda: method
             try:
                 connection = opener.open(request)
-            except urllib2.HTTPError,e:
+            except urllib2.HTTPError as e:
                 connection = e
 
             resp = connection.read()
@@ -316,7 +325,7 @@ class orb_api():
                 error = json.loads(json_resp["error"])
                 if error["code"] == ERROR_CODE_RESOURCE_EXISTS:
                     if self.verbose_output:
-                        print error["message"]
+                        print(error["message"])
                 else:
                     raise ORBAPIException(error["message"],error["code"])
             elif connection.code == HTML_SERVERERROR:
@@ -330,7 +339,7 @@ class orb_api():
         time.sleep(self.sleep)
 
         if self.verbose_output:
-            print "adding tag: " + tag_name.strip()
+            print("adding tag: " + tag_name.strip())
 
         regex = re.compile('[,\.!?"\']')
         if regex.sub('', tag_name.strip()) == '':
@@ -340,7 +349,7 @@ class orb_api():
         tag_name_obj = { "name": tag_name }
 
         url = self.base_url + API_PATH + 'tag/?' + urllib.urlencode(tag_name_obj)
-        print url
+        print(url)
         req = urllib2.Request(url)
         req.add_header('Authorization', 'ApiKey '+self.user_name + ":" + self.api_key)
         req.add_header('Accept', 'application/json')
@@ -361,10 +370,10 @@ class orb_api():
                 self.__create_resourcetag(resource_id,tag['id'])
         else:
             if self.verbose_output:
-                print connection.code
+                print(connection.code)
 
         if self.verbose_output:
-            print "added tag: " + tag_name.strip()
+            print("added tag: " + tag_name.strip())
         return
 
     def delete_resource_tags(self, resource_tags):
@@ -380,7 +389,7 @@ class orb_api():
             request.get_method = lambda: method
             try:
                 connection = opener.open(request)
-            except urllib2.HTTPError,e:
+            except urllib2.HTTPError as e:
                 connection = e
 
             resp = connection.read()
@@ -412,7 +421,7 @@ class orb_api():
 
         try:
             connection = opener.open(request)
-        except urllib2.HTTPError,e:
+        except urllib2.HTTPError as e:
             connection = e
 
         resp = connection.read()
@@ -426,7 +435,7 @@ class orb_api():
             raise ORBAPIException(error["message"],error["code"])
         elif connection.code == HTML_SERVERERROR:
             if self.verbose_output:
-                print resp
+                print(resp)
             raise ORBAPIException("Connection or Server Error", HTML_SERVERERROR)
         elif connection.code == HTML_CREATED:
             # success
@@ -447,7 +456,7 @@ class orb_api():
         request.get_method = lambda: method
         try:
             connection = opener.open(request)
-        except urllib2.HTTPError,e:
+        except urllib2.HTTPError as e:
             connection = e
 
         if connection.code == HTML_UNAUTHORIZED:
@@ -457,7 +466,7 @@ class orb_api():
             error = json.loads(json_resp["error"])
             if error["code"] == ERROR_CODE_RESOURCETAG_EXISTS:
                 if self.verbose_output:
-                    print error["message"]
+                    print(error["message"])
                 return
             else:
                 raise ORBAPIException(error["message"],error["code"])
@@ -472,6 +481,7 @@ class orb_api():
 
         return
 
+
 class orb_resource():
     id = None
     title = None
@@ -480,11 +490,13 @@ class orb_resource():
     study_time_unit = None
     attribution = None
 
+
 class orb_resource_file():
     file = ''
     title = ''
     description = ''
     order_by = 0
+
 
 class orb_resource_url():
     url = ''
@@ -503,6 +515,7 @@ class ORBAPIException(Exception):
         # Now for your custom code...
         #self.errors = errors
 
+
 class ORBAPIResourceExistsException(Exception):
     pk = None
     code = None
@@ -518,4 +531,11 @@ class ORBAPIResourceExistsException(Exception):
         self.code = code
         self.message = message
 
+
+def orb_api():
+    return OrbClient(
+        host='',
+        user_name='',
+        api_key='',
+    )
 
