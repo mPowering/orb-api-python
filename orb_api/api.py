@@ -83,7 +83,15 @@ class OrbClient(object):
             params.update(self.param_defaults)
 
         response = self.session.request(method, request_path, params=params, data=data)
-        return response.json()
+        response_json = response.json()
+
+        if response.status_code >= 300:
+            try:
+                message = error_codes.messages[response.status_code]
+            except KeyError:
+                message = response_json["error"]
+            raise OrbApiException(message, error_codes.HTML_UNAUTHORIZED)
+        return response_json
 
     def get(self, path='', fullpath='', **kwargs):
         return self.request(GET, path, fullpath, **kwargs)
@@ -217,7 +225,7 @@ class OrbClient(object):
                 print(api_data)
                 raise
 
-    def list_resources(self, order_by=None, limit=None, **kwargs):
+    def list_resources(self, limit=None, **kwargs):
         """
 
         Args:
@@ -231,7 +239,7 @@ class OrbClient(object):
         """
         if limit:
             kwargs['limit'] = limit
-        results = self.get("resource/", **kwargs)
+        results = self.get("resource/", params=kwargs)
         return results['meta']['total_count'], self._paginator(results)
 
     def get_resource(self, resource):

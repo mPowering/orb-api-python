@@ -3,6 +3,10 @@ Tests for the client
 """
 
 from copy import deepcopy
+from datetime import date
+
+import mock
+
 from orb_api.api import OrbClient
 
 
@@ -70,3 +74,26 @@ class TestResourceListing(object):
 
         count, results = client.list_resources()
         assert count == 3
+
+    def test_resource_filtering(self, mocker):
+        """Listed resources should be orderable and filterable (as allowed by API)"""
+        client = OrbClient("http://localhost", "", "")
+        mocked_response = mock.Mock()
+        mocked_response.status_code = 200
+        mocked_response.json = mock.Mock(return_value=self.initial_response)
+        mocker.patch('orb_api.api.requests.Session.request', return_value=mocked_response)
+        count, results = client.list_resources(order_by="-update_date", update_date__gte=date(2016, 1, 1))
+        assert count == 3
+
+        client.session.request.assert_called_with(
+            "GET",
+            "http://localhost/api/v1/resource/",
+            params={
+                "username": "",
+                "api_key": "",
+                "format": "json",
+                "order_by": "-update_date",
+                "update_date__gte": date(2016, 1, 1),
+            },
+            data={},
+        )
