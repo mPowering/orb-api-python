@@ -15,6 +15,14 @@ from orb_api.exceptions import OrbApiException, OrbApiResourceExists
 API_PATH = '/api/v1/'
 
 
+def sleep_delay(func):
+    @wraps(func)
+    def inner(instance, *args, **kwargs):
+        time.sleep(instance.sleep)
+        return func(instance, *args, **kwargs)
+    return inner
+
+
 class OrbClient(object):
     """
     Client class for accessing the ORB API
@@ -23,12 +31,42 @@ class OrbClient(object):
 
     """
 
-    def __init(self, host, username, api_key, sleep=0, verbose=False):
+    def __init__(self, host, username, api_key, sleep=0, verbose=False):
         self.base_url = host
         self.user_name = username
         self.api_key = api_key
         self.sleep = sleep
         self.verbose_output = verbose
+
+        self.session = requests.Session()
+        self.session.auth = (self.user_name, self.api_key)
+        self.session.headers.update({"Content-Type": "application/json"})
+
+    @sleep_delay
+    def request(self, method, path, params=None, data=None):
+        """
+        General request handler for all HTTP calls.
+
+        Args:
+            method: HTTP method
+            path: absolute path (excluding
+            params: optional URL params (dict)
+            data: optional body [POST] data (dict)
+
+        Returns:
+            Decoded JSON response
+
+        """
+
+        full_path = self.base_url + API_PATH + path
+        params = params or {}
+        data = data or {}
+
+        response = self.session.request(method, full_path, params=params, data=data)
+        return response.json()
+
+    def get(self, path, **kwargs):
+        return self.request('GET', path, **kwargs)
 
     def search(self, query):
         req = urllib2.Request(self.base_url + API_PATH + 'resource/search/?q='+query)
@@ -118,28 +156,63 @@ class OrbClient(object):
         if self.verbose_output:
             print("Updating: " + resource.title)
 
-        if connection.code == HTML_UNAUTHORIZED:
-            raise OrbApiException("Unauthorized", HTML_UNAUTHORIZED)
-        elif connection.code == HTML_BADREQUEST:
+        if connection.code == error_codes.HTML_UNAUTHORIZED:
+            raise OrbApiException("Unauthorized", error_codes.HTML_UNAUTHORIZED)
+        elif connection.code == error_codes.HTML_BADREQUEST:
             json_resp = json.loads(resp)
             error = json.loads(json_resp["error"])
-            if error["code"] == ERROR_CODE_RESOURCE_EXISTS:
+            if error["code"] == error_codes.ERROR_CODE_RESOURCE_EXISTS:
                 raise OrbApiResourceExists(error["message"], error["code"], error["pk"])
             else:
                 raise OrbApiException(error["message"], error["code"])
-        elif connection.code == HTML_SERVERERROR:
-            raise OrbApiException("Connection or Server Error", HTML_SERVERERROR)
-        elif connection.code == HTML_CREATED:
+        elif connection.code == error_codes.HTML_SERVERERROR:
+            raise OrbApiException("Connection or Server Error", error_codes.HTML_SERVERERROR)
+        elif connection.code == error_codes.HTML_CREATED:
             # success
             data_json = json.loads(resp)
             if self.verbose_output:
                 print("added: " + str(data_json['id']) + " : " + resource.title)
             return data_json['id']
-        elif connection.code == HTML_TOO_MANY_REQUESTS:
-            raise OrbApiException("Too many API requests - you have been throttled", HTML_TOO_MANY_REQUESTS)
-            exit()
+        elif connection.code == error_codes.HTML_TOO_MANY_REQUESTS:
+            raise OrbApiException("Too many API requests - you have been throttled", error_codes.HTML_TOO_MANY_REQUESTS)
 
         return
+
+    def _paginator(self, api_data):
+        """
+        Generator function that iterates through every object in the results,
+        smoothing out the effects of API pagination.
+
+        Args:
+            api_data: the initial API data structure
+
+        Yields:
+            objects from the query and initial query until all are exhausted
+
+        """
+        for obj in api_data['objects']:
+            yield obj
+
+        while api_data['meta']['next']:
+            api_data = self.get(api_data['meta']['next'])
+            for obj in api_data['objects']:
+                yield obj
+
+    def list_resources(self, order_by=None, limit=None, **kwargs):
+        """
+
+        Args:
+            order_by: optional paramter to order the results
+            limit: maximum number of results per page
+            **kwargs: filtering arguments
+
+        Returns:
+            a tuple of the count of total items and a paginating generator
+
+        """
+        request_kwargs = {}
+        results = self.get("/resource/", limit=limit, **kwargs)
+        return results['meta']['total_count'], self._paginator(results)
 
     def get_resource(self, resource):
 
