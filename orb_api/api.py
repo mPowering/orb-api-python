@@ -1,12 +1,17 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+
+# -*- coding: utf-8 -*-
 
 import json
 import re
 import time
 import urllib
+import requests
+from functools import wraps
 
 import urllib2
-from error_codes import *
+from orb_api.models import OrbResource, OrbResourceFile, OrbResourceURL
+from orb_api import error_codes
 from poster.encode import multipart_encode
 from poster.streaminghttp import register_openers
 
@@ -76,9 +81,6 @@ class OrbClient(object):
         return json.loads(data)
 
     def add_resource(self,resource):
-        # add in script pause to save overloading server and API limits
-        time.sleep(self.sleep)
-
         data = json.dumps({'title': resource.title,
                            'description': resource.description,
                            'study_time_number': resource.study_time_number,
@@ -103,35 +105,32 @@ class OrbClient(object):
         if self.verbose_output:
             print("Submitting: " + resource.title)
 
-        if connection.code == HTML_UNAUTHORIZED:
-            raise OrbApiException("Unauthorized", HTML_UNAUTHORIZED)
-        elif connection.code == HTML_BADREQUEST:
+        if connection.code == error_codes.HTML_UNAUTHORIZED:
+            raise OrbApiException("Unauthorized", error_codes.HTML_UNAUTHORIZED)
+        elif connection.code == error_codes.HTML_BADREQUEST:
             json_resp = json.loads(resp)
             error = json.loads(json_resp["error"])
-            if error["code"] == ERROR_CODE_RESOURCE_EXISTS:
+            if error["code"] == error_codes.ERROR_CODE_RESOURCE_EXISTS:
                 raise OrbApiResourceExists(error["message"], error["code"], error["pk"])
             else:
                 raise OrbApiException(error["message"], error["code"])
-        elif connection.code == HTML_SERVERERROR:
+        elif connection.code == error_codes.HTML_SERVERERROR:
             if self.verbose_output:
                 print(resp)
-            raise OrbApiException("Connection or Server Error", HTML_SERVERERROR)
-        elif connection.code == HTML_CREATED:
+            raise OrbApiException("Connection or Server Error", error_codes.HTML_SERVERERROR)
+        elif connection.code == error_codes.HTML_CREATED:
             # success
             data_json = json.loads(resp)
             if self.verbose_output:
                 print("added: " + str(data_json['id']) + " : " + resource.title)
             return data_json['id']
-        elif connection.code == HTML_TOO_MANY_REQUESTS:
-            raise OrbApiException("Too many API requests - you have been throttled", HTML_TOO_MANY_REQUESTS)
-            exit()
+        elif connection.code == error_codes.HTML_TOO_MANY_REQUESTS:
+            raise OrbApiException("Too many API requests - you have been throttled", error_codes.HTML_TOO_MANY_REQUESTS)
 
         return
 
+    @sleep_delay
     def update_resource(self,resource):
-        # add in script pause to save overloading server and API limits
-        time.sleep(self.sleep)
-
         data = json.dumps({'title': resource.title,
                            'description': resource.description,
                            'study_time_number': resource.study_time_number,
@@ -224,19 +223,16 @@ class OrbClient(object):
 
         resp = connection.read()
 
-        if connection.code == HTML_OK:
+        if connection.code == error_codes.HTML_OK:
             data_json = json.loads(resp)
             return data_json
-        elif resp.code == HTML_UNAUTHORIZED:
-            raise OrbApiException("Unauthorized", HTML_UNAUTHORIZED)
+        elif resp.code == error_codes.HTML_UNAUTHORIZED:
+            raise OrbApiException("Unauthorized", error_codes.HTML_UNAUTHORIZED)
         else:
-            raise OrbApiException("Connection or Server Error", HTML_SERVERERROR)
-        return
+            raise OrbApiException("Connection or Server Error", error_codes.HTML_SERVERERROR)
 
+    @sleep_delay
     def add_or_update_resource_image(self, resource_id, image_file):
-        # add in script pause to save overloading server and API limits
-        time.sleep(self.sleep)
-
         register_openers()
         datagen, headers = multipart_encode({'resource_id': resource_id,
                                              'image_file': open(image_file)})
@@ -245,24 +241,20 @@ class OrbClient(object):
         request.add_header('Authorization', 'ApiKey '+self.user_name + ":" + self.api_key)
 
         resp = urllib2.urlopen(request)
-        if resp.code == HTML_UNAUTHORIZED:
-            raise OrbApiException("Unauthorized", HTML_UNAUTHORIZED)
-        elif resp.code == HTML_BADREQUEST:
+        if resp.code == error_codes.HTML_UNAUTHORIZED:
+            raise OrbApiException("Unauthorized", error_codes.HTML_UNAUTHORIZED)
+        elif resp.code == error_codes.HTML_BADREQUEST:
             json_resp = json.loads(resp.read())
             error = json.loads(json_resp["error"])
             raise OrbApiException(error["message"], error["code"])
-        elif resp.code == HTML_SERVERERROR:
-           raise OrbApiException("Connection or Server Error", HTML_SERVERERROR)
-        elif resp.code == HTML_CREATED:
+        elif resp.code == error_codes.HTML_SERVERERROR:
+           raise OrbApiException("Connection or Server Error", error_codes.HTML_SERVERERROR)
+        elif resp.code == error_codes.HTML_CREATED:
             if self.verbose_output:
                 print("Uploaded Image: " + image_file)
 
-        return
-
+    @sleep_delay
     def add_resource_file(self,resource_id, resource_file):
-        # add in script pause to save overloading server and API limits
-        time.sleep(self.sleep)
-
         register_openers()
 
         datagen, headers = multipart_encode({'resource_id': resource_id,
@@ -276,23 +268,20 @@ class OrbClient(object):
 
         resp = urllib2.urlopen(request)
 
-        if resp.code == HTML_UNAUTHORIZED:
-            raise OrbApiException("Unauthorized", HTML_UNAUTHORIZED)
-        elif resp.code == HTML_BADREQUEST:
+        if resp.code == error_codes.HTML_UNAUTHORIZED:
+            raise OrbApiException("Unauthorized", error_codes.HTML_UNAUTHORIZED)
+        elif resp.code == error_codes.HTML_BADREQUEST:
             json_resp = json.loads(resp.read())
             error = json.loads(json_resp["error"])
             raise OrbApiException(error["message"], error["code"])
-        elif resp.code == HTML_SERVERERROR:
-            raise OrbApiException("Connection or Server Error", HTML_SERVERERROR)
-        elif resp.code == HTML_CREATED:
+        elif resp.code == error_codes.HTML_SERVERERROR:
+            raise OrbApiException("Connection or Server Error", error_codes.HTML_SERVERERROR)
+        elif resp.code == error_codes.HTML_CREATED:
             if self.verbose_output:
                 print("Uploaded: " + resource_file.title)
 
-        return
-
-    def delete_resource_files(self,resource_files):
-        # add in script pause to save overloading server and API limits
-        time.sleep(self.sleep)
+    @sleep_delay
+    def delete_resource_files(self, resource_files):
         for f in resource_files:
             method = "DELETE"
             handler = urllib2.HTTPHandler()
@@ -308,26 +297,24 @@ class OrbClient(object):
 
             resp = connection.read()
 
-            if connection.code == HTML_UNAUTHORIZED:
-                raise OrbApiException("Unauthorized", HTML_UNAUTHORIZED)
-            elif connection.code == HTML_BADREQUEST:
+            if connection.code == error_codes.HTML_UNAUTHORIZED:
+                raise OrbApiException("Unauthorized", error_codes.HTML_UNAUTHORIZED)
+            elif connection.code == error_codes.HTML_BADREQUEST:
                 json_resp = json.loads(resp)
                 error = json.loads(json_resp["error"])
-                if error["code"] == ERROR_CODE_RESOURCE_EXISTS:
+                if error["code"] == error_codes.ERROR_CODE_RESOURCE_EXISTS:
                     if self.verbose_output:
                         print(error["message"])
                 else:
                     raise OrbApiException(error["message"], error["code"])
-            elif connection.code == HTML_SERVERERROR:
-                raise OrbApiException("Connection or Server Error", HTML_SERVERERROR)
-            elif connection.code == HTML_NO_CONTENT:
-                pass # success
+            elif connection.code == error_codes.HTML_SERVERERROR:
+                raise OrbApiException("Connection or Server Error", error_codes.HTML_SERVERERROR)
+            elif connection.code == error_codes.HTML_NO_CONTENT:
+                pass  # success
         return
 
-    def add_resource_url(self,resource_id, resource_url):
-        # add in script pause to save overloading server and API limits
-        time.sleep(self.sleep)
-
+    @sleep_delay
+    def add_resource_url(self, resource_id, resource_url):
         data = json.dumps({'title': resource_url.title,
                            'description': resource_url.description,
                            'url': resource_url.url,
@@ -352,31 +339,28 @@ class OrbClient(object):
 
         if self.verbose_output:
             print("Adding: " + resource_url.title)
-        if connection.code == HTML_UNAUTHORIZED:
-            raise OrbApiException("Unauthorized", HTML_UNAUTHORIZED)
-        elif connection.code == HTML_BADREQUEST:
+        if connection.code == error_codes.HTML_UNAUTHORIZED:
+            raise OrbApiException("Unauthorized", error_codes.HTML_UNAUTHORIZED)
+        elif connection.code == error_codes.HTML_BADREQUEST:
             json_resp = json.loads(resp)
             error = json.loads(json_resp["error"])
-            if error["code"] == ERROR_CODE_RESOURCE_EXISTS:
+            if error["code"] == error_codes.ERROR_CODE_RESOURCE_EXISTS:
                 if self.verbose_output:
                     print(error["message"])
                     print("Updating...")
             else:
                 raise OrbApiException(error["message"], error["code"])
-        elif connection.code == HTML_SERVERERROR:
-            raise OrbApiException("Connection or Server Error", HTML_SERVERERROR)
-        elif connection.code == HTML_CREATED:
+        elif connection.code == error_codes.HTML_SERVERERROR:
+            raise OrbApiException("Connection or Server Error", error_codes.HTML_SERVERERROR)
+        elif connection.code == error_codes.HTML_CREATED:
             # success
             data_json = json.loads(resp)
             if self.verbose_output:
                 print("added: " + str(data_json['id']) + " : " + resource_url.title)
             return data_json['id']
 
-        return
-
+    @sleep_delay
     def delete_resource_urls(self,resource_urls):
-        # add in script pause to save overloading server and API limits
-        time.sleep(self.sleep)
         for f in resource_urls:
             method = "DELETE"
             handler = urllib2.HTTPHandler()
@@ -392,26 +376,23 @@ class OrbClient(object):
 
             resp = connection.read()
 
-            if connection.code == HTML_UNAUTHORIZED:
-                raise OrbApiException("Unauthorized", HTML_UNAUTHORIZED)
-            elif connection.code == HTML_BADREQUEST:
+            if connection.code == error_codes.HTML_UNAUTHORIZED:
+                raise OrbApiException("Unauthorized", error_codes.HTML_UNAUTHORIZED)
+            elif connection.code == error_codes.HTML_BADREQUEST:
                 json_resp = json.loads(resp)
                 error = json.loads(json_resp["error"])
-                if error["code"] == ERROR_CODE_RESOURCE_EXISTS:
+                if error["code"] == error_codes.ERROR_CODE_RESOURCE_EXISTS:
                     if self.verbose_output:
                         print(error["message"])
                 else:
                     raise OrbApiException(error["message"], error["code"])
-            elif connection.code == HTML_SERVERERROR:
-                raise OrbApiException("Connection or Server Error", HTML_SERVERERROR)
-            elif connection.code == HTML_NO_CONTENT:
+            elif connection.code == error_codes.HTML_SERVERERROR:
+                raise OrbApiException("Connection or Server Error", error_codes.HTML_SERVERERROR)
+            elif connection.code == error_codes.HTML_NO_CONTENT:
                 pass # success
-        return
 
+    @sleep_delay
     def add_resource_tag(self,resource_id, tag_name):
-        # add in script pause to save overloading server and API limits
-        time.sleep(self.sleep)
-
         if self.verbose_output:
             print("adding tag: " + tag_name.strip())
 
@@ -432,7 +413,7 @@ class OrbClient(object):
 
         resp = connection.read()
 
-        if connection.code == HTML_OK:
+        if connection.code == error_codes.HTML_OK:
             data_json = json.loads(resp)
             if data_json['meta']['total_count'] == 1:
                 tag = data_json['objects'][0]
@@ -448,11 +429,9 @@ class OrbClient(object):
 
         if self.verbose_output:
             print("added tag: " + tag_name.strip())
-        return
 
+    @sleep_delay
     def delete_resource_tags(self, resource_tags):
-         # add in script pause to save overloading server and API limits
-        time.sleep(self.sleep)
         for rt in resource_tags:
             method = "DELETE"
             handler = urllib2.HTTPHandler()
@@ -468,18 +447,17 @@ class OrbClient(object):
 
             resp = connection.read()
 
-            if connection.code == HTML_UNAUTHORIZED:
-                raise OrbApiException("Unauthorized", HTML_UNAUTHORIZED)
-            elif connection.code == HTML_BADREQUEST:
+            if connection.code == error_codes.HTML_UNAUTHORIZED:
+                raise OrbApiException("Unauthorized", error_codes.HTML_UNAUTHORIZED)
+            elif connection.code == error_codes.HTML_BADREQUEST:
                 json_resp = json.loads(resp)
                 error = json.loads(json_resp["error"])
                 raise OrbApiException(error["message"], error["code"])
-            elif connection.code == HTML_SERVERERROR:
-                raise OrbApiException("Connection or Server Error", HTML_SERVERERROR)
-            elif connection.code == HTML_NO_CONTENT:
+            elif connection.code == error_codes.HTML_SERVERERROR:
+                raise OrbApiException("Connection or Server Error", error_codes.HTML_SERVERERROR)
+            elif connection.code == error_codes.HTML_NO_CONTENT:
                 pass # success
         return
-
 
     def __create_tag(self,tag_name):
 
@@ -499,19 +477,19 @@ class OrbClient(object):
             connection = e
 
         resp = connection.read()
-        if connection.code == HTML_UNAUTHORIZED:
-            raise OrbApiException("Unauthorized", HTML_UNAUTHORIZED)
-        elif connection.code == HTML_BADREQUEST:
+        if connection.code == error_codes.HTML_UNAUTHORIZED:
+            raise OrbApiException("Unauthorized", error_codes.HTML_UNAUTHORIZED)
+        elif connection.code == error_codes.HTML_BADREQUEST:
             json_resp = json.loads(resp)
             error = json.loads(json_resp["error"])
-            if error["code"] == ERROR_CODE_TAG_EMPTY:
+            if error["code"] == error_codes.ERROR_CODE_TAG_EMPTY:
                 return
             raise OrbApiException(error["message"], error["code"])
-        elif connection.code == HTML_SERVERERROR:
+        elif connection.code == error_codes.HTML_SERVERERROR:
             if self.verbose_output:
                 print(resp)
-            raise OrbApiException("Connection or Server Error", HTML_SERVERERROR)
-        elif connection.code == HTML_CREATED:
+            raise OrbApiException("Connection or Server Error", error_codes.HTML_SERVERERROR)
+        elif connection.code == error_codes.HTML_CREATED:
             # success
             data_json = json.loads(resp)
             return data_json
@@ -533,21 +511,21 @@ class OrbClient(object):
         except urllib2.HTTPError as e:
             connection = e
 
-        if connection.code == HTML_UNAUTHORIZED:
-            raise OrbApiException("Unauthorized", HTML_UNAUTHORIZED)
-        elif connection.code == HTML_BADREQUEST:
+        if connection.code == error_codes.HTML_UNAUTHORIZED:
+            raise OrbApiException("Unauthorized", error_codes.HTML_UNAUTHORIZED)
+        elif connection.code == error_codes.HTML_BADREQUEST:
             json_resp = json.loads(connection.read())
             error = json.loads(json_resp["error"])
-            if error["code"] == ERROR_CODE_RESOURCETAG_EXISTS:
+            if error["code"] == error_codes.ERROR_CODE_RESOURCETAG_EXISTS:
                 if self.verbose_output:
                     print(error["message"])
                 return
             else:
                 raise OrbApiException(error["message"], error["code"])
                 #pass
-        elif connection.code == HTML_SERVERERROR:
-            raise OrbApiException("Connection or Server Error", HTML_SERVERERROR)
-        elif connection.code == HTML_CREATED:
+        elif connection.code == error_codes.HTML_SERVERERROR:
+            raise OrbApiException("Connection or Server Error", error_codes.HTML_SERVERERROR)
+        elif connection.code == error_codes.HTML_CREATED:
             # success
             resp = connection.read()
             data_json = json.loads(resp)
@@ -556,34 +534,24 @@ class OrbClient(object):
         return
 
 
-class orb_resource():
-    id = None
-    title = None
-    description = None
-    study_time_number = 0
-    study_time_unit = None
-    attribution = None
+# Comparability functions
+
+def orb_resource():
+    return OrbResource()
 
 
-class orb_resource_file():
-    file = ''
-    title = ''
-    description = ''
-    order_by = 0
+def orb_resource_file():
+    return OrbResourceFile()
 
 
-class orb_resource_url():
-    url = ''
-    title = ''
-    description = ''
-    order_by = 0
-    file_size = 0
+def orb_resource_url():
+    return OrbResourceURL()
 
 
-def orb_api():
+def orb_api(host='', username='', api_key=''):
     return OrbClient(
-        host='',
-        user_name='',
-        api_key='',
+        host=host,
+        username=username,
+        api_key=api_key,
     )
 
