@@ -25,6 +25,7 @@ def sleep_delay(func):
     def inner(instance, *args, **kwargs):
         time.sleep(instance.sleep)
         return func(instance, *args, **kwargs)
+
     return inner
 
 
@@ -74,25 +75,25 @@ class OrbClient(object):
         return self.request('GET', path, **kwargs)
 
     def search(self, query):
-        req = urllib2.Request(self.base_url + API_PATH + 'resource/search/?q='+query)
-        req.add_header('Authorization', 'ApiKey '+self.user_name + ":" + self.api_key)
+        req = urllib2.Request(self.base_url + API_PATH + 'resource/search/?q=' + query)
+        req.add_header('Authorization', 'ApiKey ' + self.user_name + ":" + self.api_key)
         resp = urllib2.urlopen(req)
         data = resp.read()
         return json.loads(data)
 
-    def add_resource(self,resource):
+    def add_resource(self, resource):
         data = json.dumps({'title': resource.title,
                            'description': resource.description,
                            'study_time_number': resource.study_time_number,
                            'study_time_unit': resource.study_time_unit,
-                           'attribution': resource.attribution })
+                           'attribution': resource.attribution})
 
         method = "POST"
         handler = urllib2.HTTPHandler()
         opener = urllib2.build_opener(handler)
-        request = urllib2.Request(self.base_url + API_PATH + 'resource/', data=data )
-        request.add_header("Content-Type",'application/json')
-        request.add_header('Authorization', 'ApiKey '+self.user_name + ":" + self.api_key)
+        request = urllib2.Request(self.base_url + API_PATH + 'resource/', data=data)
+        request.add_header("Content-Type", 'application/json')
+        request.add_header('Authorization', 'ApiKey ' + self.user_name + ":" + self.api_key)
         request.get_method = lambda: method
 
         try:
@@ -130,19 +131,19 @@ class OrbClient(object):
         return
 
     @sleep_delay
-    def update_resource(self,resource):
+    def update_resource(self, resource):
         data = json.dumps({'title': resource.title,
                            'description': resource.description,
                            'study_time_number': resource.study_time_number,
                            'study_time_unit': resource.study_time_unit,
-                           'attribution': resource.attribution })
+                           'attribution': resource.attribution})
 
         method = "PUT"
         handler = urllib2.HTTPHandler()
         opener = urllib2.build_opener(handler)
-        request = urllib2.Request(self.base_url + API_PATH + 'resource/' + str(resource.id) + '/', data=data )
-        request.add_header("Content-Type",'application/json')
-        request.add_header('Authorization', 'ApiKey '+self.user_name + ":" + self.api_key)
+        request = urllib2.Request(self.base_url + API_PATH + 'resource/' + str(resource.id) + '/', data=data)
+        request.add_header("Content-Type", 'application/json')
+        request.add_header('Authorization', 'ApiKey ' + self.user_name + ":" + self.api_key)
         request.get_method = lambda: method
 
         try:
@@ -209,14 +210,13 @@ class OrbClient(object):
             a tuple of the count of total items and a paginating generator
 
         """
-        request_kwargs = {}
         results = self.get("/resource/", limit=limit, **kwargs)
         return results['meta']['total_count'], self._paginator(results)
 
     def get_resource(self, resource):
 
         req = urllib2.Request(self.base_url + API_PATH + 'resource/' + str(resource.id))
-        req.add_header('Authorization', 'ApiKey '+self.user_name + ":" + self.api_key)
+        req.add_header('Authorization', 'ApiKey ' + self.user_name + ":" + self.api_key)
         req.add_header('Accept', 'application/json')
 
         connection = urllib2.urlopen(req)
@@ -236,9 +236,9 @@ class OrbClient(object):
         register_openers()
         datagen, headers = multipart_encode({'resource_id': resource_id,
                                              'image_file': open(image_file)})
-        handler = urllib2.HTTPHandler()
-        request = urllib2.Request(self.base_url + '/api/upload/image/', datagen, headers )
-        request.add_header('Authorization', 'ApiKey '+self.user_name + ":" + self.api_key)
+
+        request = urllib2.Request(self.base_url + '/api/upload/image/', datagen, headers)
+        request.add_header('Authorization', 'ApiKey ' + self.user_name + ":" + self.api_key)
 
         resp = urllib2.urlopen(request)
         if resp.code == error_codes.HTML_UNAUTHORIZED:
@@ -248,13 +248,13 @@ class OrbClient(object):
             error = json.loads(json_resp["error"])
             raise OrbApiException(error["message"], error["code"])
         elif resp.code == error_codes.HTML_SERVERERROR:
-           raise OrbApiException("Connection or Server Error", error_codes.HTML_SERVERERROR)
+            raise OrbApiException("Connection or Server Error", error_codes.HTML_SERVERERROR)
         elif resp.code == error_codes.HTML_CREATED:
             if self.verbose_output:
                 print("Uploaded Image: " + image_file)
 
     @sleep_delay
-    def add_resource_file(self,resource_id, resource_file):
+    def add_resource_file(self, resource_id, resource_file):
         register_openers()
 
         datagen, headers = multipart_encode({'resource_id': resource_id,
@@ -262,9 +262,8 @@ class OrbClient(object):
                                              'description': resource_file.description,
                                              'order_by': resource_file.order_by,
                                              'resource_file': open(resource_file.file)})
-        handler = urllib2.HTTPHandler()
-        request = urllib2.Request(self.base_url + '/api/upload/file/', datagen, headers )
-        request.add_header('Authorization', 'ApiKey '+self.user_name + ":" + self.api_key)
+        request = urllib2.Request(self.base_url + '/api/upload/file/', datagen, headers)
+        request.add_header('Authorization', 'ApiKey ' + self.user_name + ":" + self.api_key)
 
         resp = urllib2.urlopen(request)
 
@@ -287,8 +286,8 @@ class OrbClient(object):
             handler = urllib2.HTTPHandler()
             opener = urllib2.build_opener(handler)
             request = urllib2.Request(self.base_url + f['resource_uri'])
-            request.add_header("Content-Type",'application/json')
-            request.add_header('Authorization', 'ApiKey '+self.user_name + ":" + self.api_key)
+            request.add_header("Content-Type", 'application/json')
+            request.add_header('Authorization', 'ApiKey ' + self.user_name + ":" + self.api_key)
             request.get_method = lambda: method
             try:
                 connection = opener.open(request)
@@ -320,14 +319,14 @@ class OrbClient(object):
                            'url': resource_url.url,
                            'order_by': resource_url.order_by,
                            'file_size': resource_url.file_size,
-                           'resource_id': resource_id,})
+                           'resource_id': resource_id, })
 
         method = "POST"
         handler = urllib2.HTTPHandler()
         opener = urllib2.build_opener(handler)
-        request = urllib2.Request(self.base_url + API_PATH + 'resourceurl/', data=data )
-        request.add_header("Content-Type",'application/json')
-        request.add_header('Authorization', 'ApiKey '+self.user_name + ":" + self.api_key)
+        request = urllib2.Request(self.base_url + API_PATH + 'resourceurl/', data=data)
+        request.add_header("Content-Type", 'application/json')
+        request.add_header('Authorization', 'ApiKey ' + self.user_name + ":" + self.api_key)
         request.get_method = lambda: method
 
         try:
@@ -360,14 +359,14 @@ class OrbClient(object):
             return data_json['id']
 
     @sleep_delay
-    def delete_resource_urls(self,resource_urls):
+    def delete_resource_urls(self, resource_urls):
         for f in resource_urls:
             method = "DELETE"
             handler = urllib2.HTTPHandler()
             opener = urllib2.build_opener(handler)
             request = urllib2.Request(self.base_url + f['resource_uri'])
-            request.add_header("Content-Type",'application/json')
-            request.add_header('Authorization', 'ApiKey '+self.user_name + ":" + self.api_key)
+            request.add_header("Content-Type", 'application/json')
+            request.add_header('Authorization', 'ApiKey ' + self.user_name + ":" + self.api_key)
             request.get_method = lambda: method
             try:
                 connection = opener.open(request)
@@ -389,10 +388,10 @@ class OrbClient(object):
             elif connection.code == error_codes.HTML_SERVERERROR:
                 raise OrbApiException("Connection or Server Error", error_codes.HTML_SERVERERROR)
             elif connection.code == error_codes.HTML_NO_CONTENT:
-                pass # success
+                pass  # success
 
     @sleep_delay
-    def add_resource_tag(self,resource_id, tag_name):
+    def add_resource_tag(self, resource_id, tag_name):
         if self.verbose_output:
             print("adding tag: " + tag_name.strip())
 
@@ -401,12 +400,12 @@ class OrbClient(object):
             return
 
         # find the tag id
-        tag_name_obj = { "name": tag_name }
+        tag_name_obj = {"name": tag_name}
 
         url = self.base_url + API_PATH + 'tag/?' + urllib.urlencode(tag_name_obj)
         print(url)
         req = urllib2.Request(url)
-        req.add_header('Authorization', 'ApiKey '+self.user_name + ":" + self.api_key)
+        req.add_header('Authorization', 'ApiKey ' + self.user_name + ":" + self.api_key)
         req.add_header('Accept', 'application/json')
 
         connection = urllib2.urlopen(req)
@@ -422,7 +421,7 @@ class OrbClient(object):
 
             # add tagresource
             if tag is not None:
-                self.__create_resourcetag(resource_id,tag['id'])
+                self.__create_resourcetag(resource_id, tag['id'])
         else:
             if self.verbose_output:
                 print(connection.code)
@@ -437,8 +436,8 @@ class OrbClient(object):
             handler = urllib2.HTTPHandler()
             opener = urllib2.build_opener(handler)
             request = urllib2.Request(self.base_url + rt['resource_uri'])
-            request.add_header("Content-Type",'application/json')
-            request.add_header('Authorization', 'ApiKey '+self.user_name + ":" + self.api_key)
+            request.add_header("Content-Type", 'application/json')
+            request.add_header('Authorization', 'ApiKey ' + self.user_name + ":" + self.api_key)
             request.get_method = lambda: method
             try:
                 connection = opener.open(request)
@@ -456,19 +455,19 @@ class OrbClient(object):
             elif connection.code == error_codes.HTML_SERVERERROR:
                 raise OrbApiException("Connection or Server Error", error_codes.HTML_SERVERERROR)
             elif connection.code == error_codes.HTML_NO_CONTENT:
-                pass # success
+                pass  # success
         return
 
-    def __create_tag(self,tag_name):
+    def __create_tag(self, tag_name):
 
-        data = json.dumps({'name': tag_name })
+        data = json.dumps({'name': tag_name})
 
         method = "POST"
         handler = urllib2.HTTPHandler()
         opener = urllib2.build_opener(handler)
-        request = urllib2.Request(self.base_url + API_PATH + 'tag/', data=data )
-        request.add_header("Content-Type",'application/json')
-        request.add_header('Authorization', 'ApiKey '+self.user_name + ":" + self.api_key)
+        request = urllib2.Request(self.base_url + API_PATH + 'tag/', data=data)
+        request.add_header("Content-Type", 'application/json')
+        request.add_header('Authorization', 'ApiKey ' + self.user_name + ":" + self.api_key)
         request.get_method = lambda: method
 
         try:
@@ -498,13 +497,13 @@ class OrbClient(object):
 
     def __create_resourcetag(self, resource_id, tag_id):
 
-        data  = json.dumps({'resource_id': resource_id, 'tag_id': tag_id })
+        data = json.dumps({'resource_id': resource_id, 'tag_id': tag_id})
         method = "POST"
         handler = urllib2.HTTPHandler()
         opener = urllib2.build_opener(handler)
-        request = urllib2.Request(self.base_url + API_PATH + 'resourcetag/', data=data )
-        request.add_header("Content-Type",'application/json')
-        request.add_header('Authorization', 'ApiKey '+self.user_name + ":" + self.api_key)
+        request = urllib2.Request(self.base_url + API_PATH + 'resourcetag/', data=data)
+        request.add_header("Content-Type", 'application/json')
+        request.add_header('Authorization', 'ApiKey ' + self.user_name + ":" + self.api_key)
         request.get_method = lambda: method
         try:
             connection = opener.open(request)
@@ -522,7 +521,7 @@ class OrbClient(object):
                 return
             else:
                 raise OrbApiException(error["message"], error["code"])
-                #pass
+                # pass
         elif connection.code == error_codes.HTML_SERVERERROR:
             raise OrbApiException("Connection or Server Error", error_codes.HTML_SERVERERROR)
         elif connection.code == error_codes.HTML_CREATED:
@@ -554,4 +553,3 @@ def orb_api(host='', username='', api_key=''):
         username=username,
         api_key=api_key,
     )
-
