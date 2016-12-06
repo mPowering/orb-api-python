@@ -3,7 +3,6 @@
 
 from setuptools import setup
 
-
 with open('README.rst', 'r') as readme_file:
     readme = readme_file.read()
 
@@ -20,6 +19,11 @@ setup(
         'requests>=2.0.0',
         'poster==0.8.1',
     ],
+    entry_points={
+        'console_scripts': [
+            'orb_cli = orb_api.__main__:main'
+        ]
+    },
     zip_safe=False,
     classifiers=[
         'Development Status :: 3 - Alpha',
