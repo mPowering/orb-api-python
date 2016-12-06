@@ -3,42 +3,43 @@
 TEST_FLAGS=--verbose
 COVER_FLAGS=--cov=orb_api
 
-install:
+install:  ## Install project requirements
 	pip install -r requirements.txt
+	python setup.py develop
 
-clean: clean-build clean-pyc clean-test-all
+clean: clean-build clean-pyc clean-test-all  ## Remove all build and test artifacts
 
-clean-build:
+clean-build:  ## Remove build artifacts only
 	@rm -rf build/
 	@rm -rf dist/
 	@rm -rf *.egg-info
 
-clean-pyc:
+clean-pyc:  ## Remove pyc files and friends
 	-@find . -name '*.pyc' -follow -print0 | xargs -0 rm -f &> /dev/null
 	-@find . -name '*.pyo' -follow -print0 | xargs -0 rm -f &> /dev/null
 	-@find . -name '__pycache__' -type d -follow -print0 | xargs -0 rm -rf &> /dev/null
 
-clean-test:
+clean-test:  ## Remove coverage artifacts
 	rm -rf .coverage coverage*
 	rm -rf tests/.coverage test/coverage*
 	rm -rf htmlcov/
 
-clean-test-all: clean-test
+clean-test-all: clean-test  ## Remove all tox environments
 	rm -rf .tox/
 
 lint:
 	flake8 orb_api
 
-test:
+test:  ## Run the tests
 	pytest ${TEST_FLAGS}
 
-test-coverage: clean-test
+test-coverage: clean-test  ## Run the tests with verbosity and coverage
 	-py.test ${COVER_FLAGS} ${TEST_FLAGS}
 	@exit_code=$?
 	@-coverage html
 	@exit ${exit_code}
 
-test-all:
+test-all:  ## Run the full suite for all environments
 	tox
 
 
