@@ -49,13 +49,14 @@ class OrbClient(object):
         self.session.headers.update({"Content-Type": "application/json"})
 
     @sleep_delay
-    def request(self, method, path, params=None, data=None):
+    def request(self, method, path='', fullpath='', params=None, data=None):
         """
         General request handler for all HTTP calls.
 
         Args:
             method: HTTP method
-            path: absolute path (excluding
+            path: path relative to the API version info
+            fullpath: optional full API path
             params: optional URL params (dict)
             data: optional body [POST] data (dict)
 
@@ -63,16 +64,23 @@ class OrbClient(object):
             Decoded JSON response
 
         """
-
-        full_path = self.base_url + API_PATH + path
+        request_path = self.base_url + (fullpath if fullpath else API_PATH + path)
         params = params or {}
         data = data or {}
 
-        response = self.session.request(method, full_path, params=params, data=data)
+        # fullpath is presumed to include all parameters pre-loaded
+        if not fullpath:
+            params.update({
+                "format": "json",
+                "username": self.user_name,
+                "api_key": self.api_key,
+            })
+
+        response = self.session.request(method, request_path, params=params, data=data)
         return response.json()
 
-    def get(self, path, **kwargs):
-        return self.request('GET', path, **kwargs)
+    def get(self, path='', fullpath='', **kwargs):
+        return self.request('GET', path, fullpath, **kwargs)
 
     def search(self, query):
         req = urllib2.Request(self.base_url + API_PATH + 'resource/search/?q=' + query)
@@ -194,9 +202,14 @@ class OrbClient(object):
             yield obj
 
         while api_data['meta']['next']:
-            api_data = self.get(api_data['meta']['next'])
-            for obj in api_data['objects']:
-                yield obj
+            api_data = self.get(fullpath=api_data['meta']['next'])
+            try:
+                for obj in api_data['objects']:
+                    yield obj
+            except KeyError:
+                print(api_data.keys())
+                print(api_data)
+                raise
 
     def list_resources(self, order_by=None, limit=None, **kwargs):
         """
@@ -210,7 +223,9 @@ class OrbClient(object):
             a tuple of the count of total items and a paginating generator
 
         """
-        results = self.get("/resource/", limit=limit, **kwargs)
+        if limit:
+            kwargs['limit'] = limit
+        results = self.get("resource/", **kwargs)
         return results['meta']['total_count'], self._paginator(results)
 
     def get_resource(self, resource):

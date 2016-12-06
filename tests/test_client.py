@@ -58,7 +58,7 @@ class TestResourceListing(object):
 
         paginated_content = list(client._paginator(first_page))
 
-        client.get.assert_called_with(next_url)
+        client.get.assert_called_with(fullpath=next_url)
 
         assert len(paginated_content) == 5
         assert [{"id": 1}, {"id": 2}, {"id": 3}, {"id": 8}, {"id": 78}] == paginated_content
