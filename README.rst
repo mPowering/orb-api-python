@@ -21,7 +21,7 @@ Otherwise run a full install:
 Running the tests
 =================
 
-Recommended to install [tox](https://tox.readthedocs.io/en/latest/), and tests can be run
+Recommended to install `tox <https://tox.readthedocs.io/en/latest/>`_, and tests can be run
 using only the `tox` command.
 
 The commands `pytest` or `make test` can be used to run the tests. The `make test` command
