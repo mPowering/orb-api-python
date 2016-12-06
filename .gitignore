@@ -8,3 +8,5 @@
 /django_mpowering.egg-info
 /src
 *.egg-info
+.coverage
+htmlcov
