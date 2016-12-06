@@ -18,6 +18,10 @@ from poster.streaminghttp import register_openers
 from orb_api.exceptions import OrbApiException, OrbApiResourceExists
 
 API_PATH = '/api/v1/'
+GET = "GET"
+POST = "POST"
+DELETE = "DELETE"
+PUT = "PUT"
 
 
 def sleep_delay(func):
@@ -48,6 +52,12 @@ class OrbClient(object):
         self.session.auth = (self.user_name, self.api_key)
         self.session.headers.update({"Content-Type": "application/json"})
 
+        self.param_defaults = {
+            "format": "json",
+            "username": self.user_name,
+            "api_key": self.api_key,
+        }
+
     @sleep_delay
     def request(self, method, path='', fullpath='', params=None, data=None):
         """
@@ -70,17 +80,13 @@ class OrbClient(object):
 
         # fullpath is presumed to include all parameters pre-loaded
         if not fullpath:
-            params.update({
-                "format": "json",
-                "username": self.user_name,
-                "api_key": self.api_key,
-            })
+            params.update(self.param_defaults)
 
         response = self.session.request(method, request_path, params=params, data=data)
         return response.json()
 
     def get(self, path='', fullpath='', **kwargs):
-        return self.request('GET', path, fullpath, **kwargs)
+        return self.request(GET, path, fullpath, **kwargs)
 
     def search(self, query):
         req = urllib2.Request(self.base_url + API_PATH + 'resource/search/?q=' + query)
@@ -96,7 +102,7 @@ class OrbClient(object):
                            'study_time_unit': resource.study_time_unit,
                            'attribution': resource.attribution})
 
-        method = "POST"
+        method = POST
         handler = urllib2.HTTPHandler()
         opener = urllib2.build_opener(handler)
         request = urllib2.Request(self.base_url + API_PATH + 'resource/', data=data)
@@ -146,7 +152,7 @@ class OrbClient(object):
                            'study_time_unit': resource.study_time_unit,
                            'attribution': resource.attribution})
 
-        method = "PUT"
+        method = PUT
         handler = urllib2.HTTPHandler()
         opener = urllib2.build_opener(handler)
         request = urllib2.Request(self.base_url + API_PATH + 'resource/' + str(resource.id) + '/', data=data)
@@ -297,7 +303,7 @@ class OrbClient(object):
     @sleep_delay
     def delete_resource_files(self, resource_files):
         for f in resource_files:
-            method = "DELETE"
+            method = DELETE
             handler = urllib2.HTTPHandler()
             opener = urllib2.build_opener(handler)
             request = urllib2.Request(self.base_url + f['resource_uri'])
@@ -336,7 +342,7 @@ class OrbClient(object):
                            'file_size': resource_url.file_size,
                            'resource_id': resource_id, })
 
-        method = "POST"
+        method = POST
         handler = urllib2.HTTPHandler()
         opener = urllib2.build_opener(handler)
         request = urllib2.Request(self.base_url + API_PATH + 'resourceurl/', data=data)
@@ -376,7 +382,7 @@ class OrbClient(object):
     @sleep_delay
     def delete_resource_urls(self, resource_urls):
         for f in resource_urls:
-            method = "DELETE"
+            method = DELETE
             handler = urllib2.HTTPHandler()
             opener = urllib2.build_opener(handler)
             request = urllib2.Request(self.base_url + f['resource_uri'])
@@ -447,7 +453,7 @@ class OrbClient(object):
     @sleep_delay
     def delete_resource_tags(self, resource_tags):
         for rt in resource_tags:
-            method = "DELETE"
+            method = DELETE
             handler = urllib2.HTTPHandler()
             opener = urllib2.build_opener(handler)
             request = urllib2.Request(self.base_url + rt['resource_uri'])
@@ -477,7 +483,7 @@ class OrbClient(object):
 
         data = json.dumps({'name': tag_name})
 
-        method = "POST"
+        method = POST
         handler = urllib2.HTTPHandler()
         opener = urllib2.build_opener(handler)
         request = urllib2.Request(self.base_url + API_PATH + 'tag/', data=data)
@@ -513,7 +519,7 @@ class OrbClient(object):
     def __create_resourcetag(self, resource_id, tag_id):
 
         data = json.dumps({'resource_id': resource_id, 'tag_id': tag_id})
-        method = "POST"
+        method = POST
         handler = urllib2.HTTPHandler()
         opener = urllib2.build_opener(handler)
         request = urllib2.Request(self.base_url + API_PATH + 'resourcetag/', data=data)
