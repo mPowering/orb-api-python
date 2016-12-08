@@ -22,7 +22,7 @@ ERROR_CODE_TAG_EMPTY = 5001
 ERROR_CODE_TAG_DOES_NOT_EXIST = 5010
 
 messages = {
-    HTML_UNAUTHORIZED:  "Unauthorized",
+    HTML_UNAUTHORIZED: "Unauthorized",
     HTML_TOO_MANY_REQUESTS: "Too many API requests - you have been throttled",
     HTML_BADREQUEST: "Bad HTTP request",
     HTML_NOT_FOUND: "No matching API resource found",
