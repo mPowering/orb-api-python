@@ -6,9 +6,11 @@ from setuptools import setup
 with open('README.rst', 'r') as readme_file:
     readme = readme_file.read()
 
+from orb_api import __version__
+
 setup(
     name='orb_api',
-    version='0.1.0',
+    version=__version__,
     description='Python wrapper for ORB API',
     long_description=readme,
     packages=[
