@@ -20,25 +20,18 @@ INFILE = os.path.join(BASE_DIR, 'zika_data', 'Zika-ORB-data.csv')
 
 CSV_FORMAT = {
               'title': 0,
-              'description': 1,
-              'health-domain': 2,
-              'audience': 3,
-              'geography': 4,
-              'study_time': 5,
-              'additional_tags': 6,
-              'English': 7,
-              'Spanish': 8,
-              'French':9,
-              'Swahili':10,
-              'youtube_link':11
+              'organisation': 1,
+              'description': 2,
+              'resource-type': 3, 
+              'license': 4,
+              'health-domain': 5,
+              'audience': 6,
+              'geography': 7,
+              'English': 8,
+              'Spanish': 9,
+              'Portuguese':10
               }
 
-LANGUAGES = ['English', 'Portuguese', 'Spanish']
-
-MPOWERING_DEFAULT_TAGS = ["Video",  
-                          "Laptop", 
-                          "Smartphone", 
-                          "Tablet", ]
 
 DEBUG = True
 
@@ -65,17 +58,35 @@ def run(orb_url, orb_username, orb_key):
             resource.title =  row[CSV_FORMAT['title']]
             
             # get the video id 
-            youtube_link = row[CSV_FORMAT['youtube_link']].split('/')
-            video_id = youtube_link[len(youtube_link)-1]
-            
-            resource.description = row[CSV_FORMAT['description']].decode('utf-8') + '<div style="text-align:center;">' +\
-                         '<iframe width="560" height="315" src="https://www.youtube.com/embed/'+\
-                          video_id +\
-                          '?rel=0&html5=1" frameborder="0" allowfullscreen></iframe></div>'
-        
-            if row[CSV_FORMAT['study_time']] != '':
-                resource.study_time_number = row[CSV_FORMAT['study_time']]
-                resource.study_time_unit = 'mins'
+            youtube_link = None
+            LANGUAGES = []
+            if row[CSV_FORMAT['English']].strip() != "":
+                youtube_link = row[CSV_FORMAT['English']].strip()
+                LANGUAGES.append("English")
+            if row[CSV_FORMAT['Spanish']].strip() != "":
+                youtube_link = row[CSV_FORMAT['Spanish']].strip()
+                LANGUAGES.append("Spanish")
+            if row[CSV_FORMAT['Portuguese']].strip() != "":
+                youtube_link = row[CSV_FORMAT['Portuguese']].strip()
+                LANGUAGES.append("Portuguese")
+                
+            if youtube_link: 
+                
+                youtube_link = youtube_link.split('/')
+                video_id = youtube_link[len(youtube_link)-1]
+                
+                resource.description = row[CSV_FORMAT['description']].decode('utf-8') + '<div style="text-align:center;">' +\
+                             '<iframe width="560" height="315" src="https://www.youtube.com/embed/'+\
+                              video_id +\
+                              '?rel=0&html5=1" frameborder="0" allowfullscreen></iframe></div>'
+                              
+                # get resource image from YouTube             
+                image_file_path = os.path.join('/tmp', video_id + '.jpg')
+                if not os.path.exists(image_file_path):
+                    urllib.urlretrieve ("http://img.youtube.com/vi/%s/mqdefault.jpg" % (video_id), image_file_path )
+            else:
+                image_file_path = None
+                resource.description = row[CSV_FORMAT['description']].decode('utf-8') 
                 
             try:
                 resource.id = api.add_resource(resource)
@@ -97,19 +108,12 @@ def run(orb_url, orb_username, orb_key):
             # remove all tags for resource
             api.delete_resource_tags(resource_from_api['tags'])
                 
-            # get resource image from YouTube
-            image_file_path = os.path.join('/tmp', video_id + '.jpg')
-            if not os.path.exists(image_file_path):
-                urllib.urlretrieve ("http://img.youtube.com/vi/%s/mqdefault.jpg" % (video_id), image_file_path )
+            if image_file_path:
+                api.add_or_update_resource_image(resource.id, image_file_path)
             
-            api.add_or_update_resource_image(resource.id, image_file_path)
-            
-            # add all the default tags
-            for tag in MPOWERING_DEFAULT_TAGS:
-                api.add_resource_tag(resource.id, tag.strip())
                 
             # add resource specific tags
-            specific_tags = row[CSV_FORMAT['health-domain']] + "," + row[CSV_FORMAT['audience']] + "," + row[CSV_FORMAT['geography']]
+            specific_tags = row[CSV_FORMAT['license']] + "," + row[CSV_FORMAT['resource-type']] + "," + row[CSV_FORMAT['organisation']] + "," + row[CSV_FORMAT['health-domain']] + "," + row[CSV_FORMAT['audience']] + "," + row[CSV_FORMAT['geography']]
             tag_list = [x.strip() for x in specific_tags.split(',')]
             for tag in tag_list:
                 api.add_resource_tag(resource.id, tag.strip())
