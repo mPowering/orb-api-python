@@ -4,20 +4,25 @@
 
 from __future__ import unicode_literals
 
-import json
 import re
+import warnings
+
+import json
+import requests
 import time
 import urllib
 import urllib2
-import warnings
 from functools import wraps
-
-import requests
-from orb_api import error_codes
-from orb_api.exceptions import OrbApiException, OrbApiResourceExists
-from orb_api.models import OrbResource, OrbResourceFile, OrbResourceURL
 from poster.encode import multipart_encode
 from poster.streaminghttp import register_openers
+
+from orb_api import error_codes
+from orb_api.exceptions import OrbApiException
+from orb_api.exceptions import OrbApiResourceExists
+from orb_api.exceptions import OrbRequestLimit
+from orb_api.models import OrbResource
+from orb_api.models import OrbResourceFile
+from orb_api.models import OrbResourceURL
 
 API_PATH = '/api/v1/'
 GET = "GET"
@@ -85,7 +90,12 @@ class OrbClient(object):
             params.update(self.param_defaults)
 
         response = self.session.request(method, request_path, params=params, data=data)
-        response_json = response.json()
+        try:
+            response_json = response.json()
+        except ValueError:
+            if response.status_code == 429:
+                raise OrbRequestLimit
+            raise
 
         if response.status_code >= 300:
             try:
