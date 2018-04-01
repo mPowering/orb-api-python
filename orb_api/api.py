@@ -2,20 +2,22 @@
 
 # -*- coding: utf-8 -*-
 
+from __future__ import unicode_literals
+
 import json
 import re
 import time
 import urllib
-import requests
+import urllib2
+import warnings
 from functools import wraps
 
-import urllib2
-from orb_api.models import OrbResource, OrbResourceFile, OrbResourceURL
+import requests
 from orb_api import error_codes
+from orb_api.exceptions import OrbApiException, OrbApiResourceExists
+from orb_api.models import OrbResource, OrbResourceFile, OrbResourceURL
 from poster.encode import multipart_encode
 from poster.streaminghttp import register_openers
-
-from orb_api.exceptions import OrbApiException, OrbApiResourceExists
 
 API_PATH = '/api/v1/'
 GET = "GET"
@@ -243,22 +245,11 @@ class OrbClient(object):
         return results['meta']['total_count'], self._paginator(results)
 
     def get_resource(self, resource):
+        warnings.warn("Call get_resource_by_id directly", DeprecationWarning, stacklevel=2)
+        return self.get_resource_by_id(resource.id)
 
-        req = urllib2.Request(self.base_url + API_PATH + 'resource/' + str(resource.id))
-        req.add_header('Authorization', 'ApiKey ' + self.user_name + ":" + self.api_key)
-        req.add_header('Accept', 'application/json')
-
-        connection = urllib2.urlopen(req)
-
-        resp = connection.read()
-
-        if connection.code == error_codes.HTML_OK:
-            data_json = json.loads(resp)
-            return data_json
-        elif resp.code == error_codes.HTML_UNAUTHORIZED:
-            raise OrbApiException("Unauthorized", error_codes.HTML_UNAUTHORIZED)
-        else:
-            raise OrbApiException("Connection or Server Error", error_codes.HTML_SERVERERROR)
+    def get_resource_by_id(self, resource_id, **kwargs):
+        return self.get("resource/{}/".format(resource_id, params=kwargs))
 
     @sleep_delay
     def add_or_update_resource_image(self, resource_id, image_file):
